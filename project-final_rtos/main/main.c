@@ -12,6 +12,7 @@
 #include "driver/uart.h"
 #include "string.h"
 #include "driver/gpio.h"
+#include "PWM_Control/include/pwm_control.h"
 
 //include "NTC_library/include/NTC_library.h"
 #include "ADC_library/include/ADC_library.h"
