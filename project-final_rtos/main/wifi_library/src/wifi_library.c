@@ -387,4 +387,5 @@ void wifi_app_start(void)
         esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_config_sta);
         esp_wifi_connect(); // Intentar conexión inmediata al iniciar
     }
+
 }
