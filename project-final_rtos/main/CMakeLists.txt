@@ -1,4 +1,4 @@
-idf_component_register(SRCS "blink_example_main.c" 
+idf_component_register(SRCS "main.c" 
                             "ADC_library/src/ADC_library.c"
                             "uart_library/src/uart_library.c"
                             "command_library/src/command_library.c"

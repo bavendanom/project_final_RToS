@@ -32,6 +32,10 @@ static void init_server(void){
     }
     ESP_ERROR_CHECK(ret);
 
+    // Configurar el pin GPIO para el LED
+    gpio_reset_pin(LED_GPIO);
+    gpio_set_direction(LED_GPIO, GPIO_MODE_OUTPUT);
+
 
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");
     wifi_app_start();
