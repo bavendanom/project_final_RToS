@@ -8,7 +8,7 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #070707;
+            background-color: #4da046;
             text-align: center;
             zoom: 1.5;
         }
@@ -153,8 +153,22 @@
     </style>
 </head>
 <body>
+    
     <div class="container">
+
         <div class="settings-section section">
+            <div id="OTA">
+                <h2>ESP32 Firmware Update</h2>
+                    <label id="latest_firmware_label">Latest Firmware: </label>
+                    <div id="latest_firmware"></div> 
+                    <input type="file" id="selected_file" accept=".bin" style="display: none;" onchange="getFileInfo()" />
+                    <div class="buttons">
+                        <input type="button" value="Select File" onclick="document.getElementById('selected_file').click();" />
+                        <input type="button" value="Update Firmware" onclick="updateFirmware()" />
+                    </div>
+                    <h4 id="file_info"></h4>	
+                    <h4 id="ota_update_status"></h4>
+            </div>
             <h2>Settings Network</h2>
             <label>SSID:</label>
             <input type="text" id="wifi-ssid">
@@ -251,6 +265,7 @@
                 </div>
                 <button class="time-btn" onclick="setTime()">Set</button>
             </div>
+            
         </div>      
     </div>
     <script src="script.js"></script>

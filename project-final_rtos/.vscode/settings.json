@@ -6,7 +6,7 @@
         "board/esp32-wrover-kit-3.3v.cfg"
     ],
     "idf.toolsPathWin": "C:\\Users\\braya\\.espressif",
-    "idf.portWin": "COM11",
+    "idf.portWin": "COM12",
     "idf.flashType": "UART",
     "idf.customExtraVars": {
         "IDF_TARGET": "esp32"

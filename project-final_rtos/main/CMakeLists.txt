@@ -9,4 +9,5 @@ idf_component_register(SRCS "main.c"
                                     "command_library/include"
                                     "wifi_library/include"
                                     "server_library/include"
+                                    "."
                     EMBED_FILES "webpage/index.html" "webpage/script.js" "webpage/styles.css")
