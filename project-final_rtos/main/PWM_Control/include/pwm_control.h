@@ -3,6 +3,7 @@
 
 #include "driver/ledc.h"
 #include "esp_err.h"
+#include "esp_log.h"    
 
 /**
  * @brief Configuración genérica para PWM.
@@ -101,5 +102,37 @@ void rgb_led_set_duty(const RGB_LED *rgb_led, uint32_t red_duty, uint32_t green_
  * @param[in] blue_value Intensidad del color azul (0-100).
  */
 void rgb_led_set_color(const RGB_LED *rgb_led, uint32_t red_value, uint32_t green_value, uint32_t blue_value);
+
+/**
+ * @brief Convierte un ángulo a un ciclo de trabajo PWM.
+ *
+ * Convierte un ángulo en grados a un valor de ciclo de trabajo PWM
+ * para controlar un servo motor. El ciclo de trabajo se calcula en base
+ * a los valores mínimo y máximo de pulso en microsegundos, y el periodo
+ * del PWM en microsegundos.
+ *
+ * @param[in] angle Ángulo en grados (0-180).
+ * @return Ciclo de trabajo PWM para el ángulo especificado.
+ */
+
+typedef struct Servo {
+    PWM_Channel channel;  // Combina gpio_num y channel
+    PWM_Config config;
+} Servo;
+
+void servo_init(const Servo *servo);
+
+/**
+ * @brief Ajusta el ángulo de un servo motor.
+ *
+ * Ajusta el ángulo de un servo motor en base a un valor de ciclo de trabajo
+ * PWM calculado a partir de un ángulo en grados. El ciclo de trabajo se
+ * calcula en base a los valores mínimo y máximo de pulso en microsegundos,
+ * y el periodo del PWM en microsegundos.
+ *
+ * @param[in] servo Configuración del servo motor.
+ * @param[in] angle Ángulo en grados (0-180).
+ */
+void servo_set_angle(const Servo *servo, uint32_t angle);
 
 #endif // RGB_LED_H
