@@ -1,0 +1,12 @@
+idf_component_register(SRCS "blink_example_main.c" 
+                            "ADC_library/src/ADC_library.c"
+                            "uart_library/src/uart_library.c"
+                            "command_library/src/command_library.c"
+                            "wifi_library/src/wifi_library.c"
+                            "server_library/src/server_library.c"
+                    INCLUDE_DIRS    "uart_library/include" 
+                                    "ADC_library/include"
+                                    "command_library/include"
+                                    "wifi_library/include"
+                                    "server_library/include"
+                    EMBED_FILES "webpage/index.html" "webpage/script.js" "webpage/styles.css")

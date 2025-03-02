@@ -1,0 +1,90 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    text-align: center;
+}
+
+.container {
+    width: 50%;
+    margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h3 {
+    color: #333;
+}
+
+button {
+    background-color: #ffcc00;
+    border: none;
+    padding: 10px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #ffaa00;
+}
+
+
+.new-box {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px dashed #551212;
+    padding: 15px;
+    border-radius: 20px;
+    min-height: 300px; /* Ajusta el tamaño según sea necesario */
+    background-color: #f1f8ff;
+}
+
+#chromatic-circle {
+    border-radius: 0px; /* Hace que el canvas sea circular */
+    box-shadow: 0 0px 0px rgba(0, 0, 0, 0.2); /* Sombra para un efecto 3D */
+}
+
+.rgb-display {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.rgb-display label {
+    font-weight: bold;
+}
+
+.rgb-display input {
+    padding: 5px;
+    border: 1px solid #0a20eb;
+    border-radius: 5px;
+    text-align: center;
+    background-color: #f9f9f9;
+    cursor: not-allowed; /* Evita que el usuario edite el valor */
+}
+
+
+.slider-container {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.slider-container label {
+    font-weight: bold;
+    color: #1565c0;
+}
+
+.slider-container input[type="range"] {
+    width: 80%;
+    margin-top: 10px;
+}
+
+.slider-container span {
+    display: inline-block;
+    margin-left: 10px;
+    font-weight: bold;
+    color: #1976d2;
+}

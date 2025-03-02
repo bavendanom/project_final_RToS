@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Temperature Control</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #070707;
+            text-align: center;
+            zoom: 1.5;
+        }
+        .container {
+            width: 80%;
+            margin: auto;
+            background: rgb(0, 0, 0);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto;
+            gap: 15px;
+        }
+        h2 {
+            border-bottom: 2px solid #1976d2;
+            padding-bottom: 5px;
+            color: #1565c0;
+        }
+        .section {
+            padding: 15px;
+            border: 1px solid #bbdefb;
+            border-radius: 10px;
+            background-color: #f1f8ff;
+        }
+        .settings-section {
+            grid-column: 1 / 2;
+            grid-row: 1 / 3;
+        }
+        .rgb-section {
+            grid-column: 2 / 3;
+            grid-row: 1 / 2;
+        }
+        .temperature-section {
+            grid-column: 3 / 4;
+            grid-row: 1 / 2;
+        }
+        .print-section {
+            grid-column: 2 / 4;
+            grid-row: 2 / 3;
+        }
+        .slider-section{
+            grid-column: 1 / 1;
+            grid-row: 3 / 3;
+            /* padding: 15px;
+            border: 1px solid #bbdefb;
+            border-radius: 10px;
+            background-color: #f1f8ff; */
+        }
+        .rgb-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .rgb-label {
+            font-weight: bold;
+            flex: 1;
+        }
+        .rgb-input {
+            flex: 2;
+            display: flex;
+            justify-content: space-between;
+        }
+        .temperature-box {
+            border: 2px dashed #000;
+            padding: 15px;
+            border-radius: 10px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        .print-box {
+            border: 2px dashed #000;
+            padding: 15px;
+            border-radius: 10px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            flex-direction: column;  /* Asegura que los elementos hijos se muestren en bloque */
+        }
+        .temperature-section img {
+            width: 100px; /* Ajusta el tamaño si es necesario */
+            height: auto;
+            display: block;
+            margin: auto;
+        }
+        button {
+            background-color: #42a5f5;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            color: white;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #1e88e5;
+        }
+        .settings-section input {
+            width: 90%;
+            
+            padding: 8px;
+            border: 1px solid #90caf9;
+            border-radius: 5px;
+        }
+        .rgb-control {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.5px;
+            width: 100%;
+        }
+        .rgb-control .rgb-input {
+            display: flex;
+            justify-content: center;
+            gap: 5px; /* Espacio entre los inputs */
+        }
+        .rgb-control input {
+            width: 40px;
+            padding: 5px;
+            border: 2px solid #1976d2;
+            border-radius: 5px;
+            text-align: center;
+        }
+        .slider-box {
+            border: 2px dashed #000;
+            padding: 20px;
+            border-radius: 30px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="settings-section section">
+            <h2>Settings Network</h2>
+            <label>SSID:</label>
+            <input type="text" id="wifi-ssid">
+            <label>Password:</label>
+            <input type="password" id="wifi-pass">
+            <button onclick="connectWiFi()">Connect</button>
+            <h2>Settings Hotspot</h2>
+            <label>SSID:</label>
+            <input type="text" id="hotspot-ssid">
+            <label>Password:</label>
+            <input type="password" id="hotspot-pass">
+            <button onclick="setHotspot()">Set</button>
+        </div>
+        <div class="rgb-section section">
+            <h2>Temperature Indicator</h2>
+            <div class="rgb-control">
+                <span class="rgb-label">RGB_Red </span>
+                <div class="rgb-input">
+                    <input type="number" id="red-min" placeholder="Min">
+                    <input type="number" id="red-max" placeholder="Max">
+                </div>
+                <button class="red-btn" onclick="setRed()">Set</button>
+            </div>
+            <div class="rgb-control">
+                <span class="rgb-label">RGB_Green</span>
+                <div class="rgb-input">
+                    <input type="number" id="green-min" placeholder="Min">
+                    <input type="number" id="green-max" placeholder="Max">
+                </div>
+                <button class="green-btn" onclick="setGreen()">Set</button>
+            </div>
+            <div class="rgb-control">
+                <span class="rgb-label">RGB_Blue </span>
+                <div class="rgb-input">
+                    <input type="number" id="blue-min" placeholder="Min">
+                    <input type="number" id="blue-max" placeholder="Max">
+                </div>
+                <button class="blue-btn" onclick="setBlue()">Set</button>
+            </div>
+        </div>
+        <div class="temperature-section section">
+            <h2>Temperature Display</h2>
+            <!-- <img src="led_icon.png" alt="LED Icon"> -->
+            <div class="temperature-box" id="temperature-display">
+                
+            </div>
+            <button onclick="getTemperature()">Get</button> 
+            <button onclick="Toogle()">Toogle</button>
+        </div>
+        <div class="print-temperature-section section">
+            <h2>Print Temperature</h2>
+            <div class="print-box" id="temperature-output">
+                <!-- Aquí se imprimirá la información de temperatura -->
+            </div>
+            <div class="button-group">
+                <button onclick="turnOnTemp()">ON</button>
+                <button onclick="turnOffTemp()">OFF</button>
+            </div>
+        </div>
+        <div class="print-adc-section section">
+            <h2>Print ADC Pot</h2>
+            <div class="print-box" id="adc-value">
+                <!-- Aquí se imprimirá la información del ADC-->
+            </div>
+            <div class="button-group">
+                <button onclick="turnOnADC()">ON</button>
+                <button onclick="turnOffADC()">OFF</button>
+                <button onclick="changeColor()">CHANGE</button>
+            </div>
+        </div>
+        <div class="slider-section section">
+            <h2>Chromatic Circle</h2>
+            <div class="slider-box">
+                <canvas id="chromatic-circle" width="300" height="300"></canvas>
+            </div>
+            <div class="slider-container">
+                <label for="brightness-slider">Brightness:</label>
+                <input type="range" id="brightness-slider" min="0" max="100" value="100">
+                <span id="slider-value">100</span>
+            </div>
+            <div class="rgb-display">
+                <label>Red:</label>
+                <input type="text" id="red-value" readonly>
+                <label>Green:</label>
+                <input type="text" id="green-value" readonly>
+                <label>Blue:</label>
+                <input type="text" id="blue-value" readonly>
+            </div>
+            <div class="rgb-control">
+                <span class="time">Times </span>
+                <div class="rgb-input">
+                    <input type="number" id="time_on" placeholder="Min">
+                    <input type="number" id="time_off" placeholder="Max">
+                </div>
+                <button class="time-btn" onclick="setTime()">Set</button>
+            </div>
+        </div>      
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
