@@ -23,6 +23,10 @@
 #include "server_library/include/server_library.h"
 
 
+
+
+
+
 static const char *TAG = "wifi station";
 static void init_server(void){
     // Initialize NVS
@@ -50,6 +54,8 @@ void app_main(void)
     queue_comandos_init();
     comandos_init_server();
     init_server();
+    servo_init();
+    //servo_init(&mi_servo);
     while(1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

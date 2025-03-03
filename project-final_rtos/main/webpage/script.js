@@ -493,9 +493,9 @@ brightnessSlider.addEventListener("input", function () {
 //MARK: TIME ON OFF
 function setTime(){
     let min = document.getElementById('time_on').value;
-    let max = document.getElementById('time_off').value;
+    //let max = document.getElementById('time_off').value;
 
-    if (min === "" || max === "") {
+    if (min === "") {
         alert("Enter Min and Max values for RED");
         return;
     }
@@ -503,7 +503,7 @@ function setTime(){
     // Crear el cuerpo de la solicitud con los datos configurados
     const data = {
         min: parseFloat(min),
-        max: parseFloat(max)
+        //max: parseFloat(max)
     };
 
     // Enviar los datos al servidor mediante una solicitud POST
