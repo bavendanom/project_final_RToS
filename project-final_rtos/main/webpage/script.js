@@ -369,12 +369,119 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(response => response.text())
         .then(data => console.log(`Modo cambiado: ${data}`))
         .catch(error => console.error("Error:", error));
-    }
-
-    // Event listeners para modos
+    } 
+  // Event listeners para modos
     manualBtn.addEventListener('click', () => setMode('manual'));
     autoBtn.addEventListener('click', () => setMode('auto'));
 
     // Inicialización
     setMode('manual');
 });
+
+ 
+
+//MARK: REGISTROS
+
+function send_register() {
+    // Obtener valores del formulario
+    const selectedNumber = document.getElementById('selectNumber').value;
+    const hours = document.getElementById('hours').value;
+    const minutes = document.getElementById('minutes').value;
+
+    // Mapear días de la semana (versión optimizada)
+    const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    const selectedDays = days.map(day => 
+        document.getElementById(`day_${day}`).checked ? "1" : "0"
+    );
+
+    // Crear objeto de datos
+    const requestData = {
+        selectedNumber,
+        hours,
+        minutes,
+        selectedDays,
+        timestamp: Date.now()
+    };
+
+    console.log("Datos enviados:", requestData);
+
+    // Configuración de fetch (corregido)
+    fetch("/regchange.json", {
+        method: "POST",
+        headers: { 
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache" // Alternativa válida
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => {
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return response.text();
+    })
+    .then(data => alert(`Respuesta del servidor: ${data}`))
+    .catch(error => {
+        console.error("Error en la solicitud:", error);
+        alert(`Error: ${error.message}`);
+    });
+}
+
+/**
+ * toogle led function.
+ */
+function read_reg()
+{
+
+	
+	$.ajax({
+		url: '/readreg.json',
+		dataType: 'json',
+		method: 'POST',
+		cache: false,
+		//headers: {'my-connect-ssid': selectedSSID, 'my-connect-pwd': pwd},
+		//data: {'timestamp': Date.now()}
+	});
+//	var xhr = new XMLHttpRequest();
+//	xhr.open("POST", "/toogle_led.json");
+//	xhr.setRequestHeader("Content-Type", "application/json");
+//	xhr.send(JSON.stringify({data: "mi información"}));
+}
+
+
+function erase_register()
+{
+    // Assuming you have selectedNumber, hours, minutes variables populated from your form
+    selectedNumber = $("#selectNumber").val();
+
+
+
+    // Create an object to hold the data to be sent in the request body
+    var requestData = {
+        'selectedNumber': selectedNumber,
+        'timestamp': Date.now()
+    };
+
+    // Serialize the data object to JSON
+    var requestDataJSON = JSON.stringify(requestData);
+
+	$.ajax({
+		url: '/regchange.json',
+		dataType: 'json',
+		method: 'POST',
+		cache: false,
+		data: requestDataJSON, // Send the JSON data in the request body
+		contentType: 'application/json', // Set the content type to JSON
+		success: function(response) {
+		  // Handle the success response from the server
+		  console.log(response);
+		},
+		error: function(xhr, status, error) {
+		  // Handle errors
+		  console.error(xhr.responseText);
+		}
+	  });
+
+    // Print the resulting JSON to the console (for testing)
+    //console.log(requestDataJSON);
+}
+    
+

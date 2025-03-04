@@ -90,4 +90,4 @@ void servo_set_angle(const Servo *servo, uint32_t angle) {
 void servo_angle(uint32_t value_angle){
     servo_set_angle(&mi_servo, value_angle);
     printf("Angulo configurado en: %li\n°C", value_angle);
-}
+

@@ -1,7 +1,8 @@
 {
     "C_Cpp.intelliSenseEngine": "default",
-    "idf.espIdfPathWin": "c:\\ESP_Programming\\v5.3.1\\esp-idf",
-    "idf.pythonInstallPath": "c:\\ESP_Programming\\.espressif\\tools\\idf-python\\3.11.2\\python.exe",
+    "idf.espIdfPathWin": "C:\\Users\\braya\\esp\\v5.4\\esp-idf",
+    "idf.pythonInstallPath": "C:\\Users\\braya\\.espressif\\tools\\idf-python\\3.11.2\\python.exe",
+
     "idf.openOcdConfigs": [
         "board/esp32-wrover-kit-3.3v.cfg"
     ],
