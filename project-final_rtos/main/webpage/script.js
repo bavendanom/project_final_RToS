@@ -1,521 +1,380 @@
-var seconds 	= null;
-var otaTimerVar =  null;
-
-/**
- * Gets file name and size for display on the web page.
- */        
-function getFileInfo() 
-{
-    var x = document.getElementById("selected_file");
-    var file = x.files[0];
-
-    document.getElementById("file_info").innerHTML = "<h4>File: " + file.name + "<br>" + "Size: " + file.size + " bytes</h4>";
-}
-
-/**
- * Handles the firmware update.
- */
-function updateFirmware() 
-{
-    // Form Data
-    var formData = new FormData();
-    var fileSelect = document.getElementById("selected_file");
-    
-    if (fileSelect.files && fileSelect.files.length == 1) 
-	{
-        var file = fileSelect.files[0];
-        formData.set("file", file, file.name);
-        document.getElementById("ota_update_status").innerHTML = "Uploading " + file.name + ", Firmware Update in Progress...";
-
-        // Http Request
-        var request = new XMLHttpRequest();
-
-        request.upload.addEventListener("progress", updateProgress);
-        request.open('POST', "/OTAupdate");
-        request.responseType = "blob";
-        request.send(formData);
-    } 
-	else 
-	{
-        window.alert('Select A File First')
-    }
-}
-
-/**
- * Progress on transfers from the server to the client (downloads).
- */
-function updateProgress(oEvent) 
-{
-    if (oEvent.lengthComputable) 
-	{
-        getUpdateStatus();
-    } 
-	else 
-	{
-        window.alert('total size is unknown')
-    }
-}
-
-/**
- * Posts the firmware udpate status.
- */
-function getUpdateStatus() 
-{
-    var xhr = new XMLHttpRequest();
-    var requestURL = "/OTAstatus";
-    xhr.open('POST', requestURL, false);
-    xhr.send('ota_update_status');
-
-    if (xhr.readyState == 4 && xhr.status == 200) 
-	{		
-        var response = JSON.parse(xhr.responseText);
-						
-	 	document.getElementById("latest_firmware").innerHTML = response.compile_date + " - " + response.compile_time
-
-		// If flashing was complete it will return a 1, else -1
-		// A return of 0 is just for information on the Latest Firmware request
-        if (response.ota_update_status == 1) 
-		{
-    		// Set the countdown timer time
-            seconds = 10;
-            // Start the countdown timer
-            otaRebootTimer();
-        } 
-        else if (response.ota_update_status == -1)
-		{
-            document.getElementById("ota_update_status").innerHTML = "!!! Upload Error !!!";
-        }
-    }
-}
-
-/**
- * Displays the reboot countdown.
- */
-function otaRebootTimer() 
-{	
-    document.getElementById("ota_update_status").innerHTML = "OTA Firmware Update Complete. This page will close shortly, Rebooting in: " + seconds;
-
-    if (--seconds == 0) 
-	{
-        clearTimeout(otaTimerVar);
-        window.location.reload();
-    } 
-	else 
-	{
-        otaTimerVar = setTimeout(otaRebootTimer, 1000);
-    }
-}
 
 
-function connectWiFi() {
-    let ssid = document.getElementById('wifi-ssid').value;
-    let pass = document.getElementById('wifi-pass').value;
+document.addEventListener('DOMContentLoaded', () => {
+    // Elementos del DOM
+    const menuItems = document.querySelectorAll('.menu-item');
+    const sections = document.querySelectorAll('.content-card');
+    const passwordInput = document.getElementById('networkPassword');
+    const togglePassword = document.querySelector('.toggle-password');
+    const firmwareFile = document.getElementById('firmwareFile');
+    const flashBtn = document.getElementById('flashBtn');
+    const fwProgress = document.getElementById('fwProgress');
 
+    // Estado de la aplicación
+    let selectedFile = null;
+    let scheduleEntries = [];
 
-    if (ssid === "" || pass === "") {
-        alert("Please enter both SSID and Password.");
-        return;
-    }
-    
-    // Crear el cuerpo de la solicitud con los datos configurados
-    const data = {
-        ssid: ssid,
-        pass: pass
-    };
-
-    fetch('/connect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.text())
-    .then(data => alert(data))
-    .catch(error => console.error('Error:', error));
-}
-
-// 🔹 Configurar Hotspot
-function setHotspot() {
-    let ssid = document.getElementById("hotspot-ssid").value;
-    let password = document.getElementById("hotspot-pass").value;
-
-    fetch("/set_hotspot", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ssid, password }),
-    })
-    .then(response => response.json())
-    .then(data => alert(data.message))
-    .catch(error => console.error("Error:", error));
-}
-
-
-//MARK: SET LED RGB RED MAX - MIN
-function setRed() {
-    let min = document.getElementById('red-min').value;
-    let max = document.getElementById('red-max').value;
-
-    if (min === "" || max === "") {
-        alert("Enter Min and Max values for RED");
-        return;
-    }
-
-    // Crear el cuerpo de la solicitud con los datos configurados
-    const data = {
-        color: 'red',
-        min: parseFloat(min),
-        max: parseFloat(max)
-    };
-
-    // Enviar los datos al servidor mediante una solicitud POST
-    fetch("/set_rgb", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.text())
-    .then(data => alert(`Response: ${data}`))
-    .catch(error => console.error("Error:", error));
-}
-
-//MARK: SET LED RGB GREEN MAX - MIN
-function setGreen() {
-    let min = document.getElementById('green-min').value;
-    let max = document.getElementById('green-max').value;
-
-    if (min === "" || max === "") {
-        alert("Enter Min and Max values for GREEN");
-        return;
-    }
-
-    // Crear el cuerpo de la solicitud con los datos configurados
-    const data = {
-        color: 'green',
-        min: parseFloat(min),
-        max: parseFloat(max)
-    };
-
-    // Enviar los datos al servidor mediante una solicitud POST
-    fetch("/set_rgb", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.text())
-    .then(data => alert(`Response: ${data}`))
-    .catch(error => console.error("Error:", error));
-}
-
-//MARK: SET LED RGB BLUE MAX - MIN
-function setBlue() {
-    let min = document.getElementById('blue-min').value;
-    let max = document.getElementById('blue-max').value;
-
-    if (min === "" || max === "") {
-        alert("Enter Min and Max values for BLUE");
-        return;
-    }
-
-    // Crear el cuerpo de la solicitud con los datos configurados
-    const data = {
-        color: 'blue',
-        min: parseFloat(min),
-        max: parseFloat(max)
-    };
-
-    // Enviar los datos al servidor mediante una solicitud POST
-    fetch("/set_rgb", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.text())
-    .then(data => alert(`Response: ${data}`))
-    .catch(error => console.error("Error:", error));
-}
-
-
-//MARK: GET TEMPERATURE last reading
-function getTemperature() {
-    fetch("/turn_on_temp")
-    //.then(response => response.json())
-    .then(data => {
-        document.getElementById("temperature-display").innerText = `Temperature: ${data.Temperature} °C`;  // Usar la clave correcta del JSON
-    })
-    .catch(error => console.error("Error:", error))
-    .then(data => console.log(`Response: ${data}`));
-}
-
-//MARK: TOOGLE LED D2
-function Toogle() {
-    fetch("/toogle_led", {
-        method: "POST",  // Cambiar a POST
-        headers: { "Content-Type": "application/json" }
-    })
-    .then(response => response.text())
-    .then(data => console.log(data)) // Muestra una alerta con el mensaje de respuesta
-    .catch(error => console.error("Error:", error));
-}
-
-//MARK: CHANGE COLOR ADC
-function changeColor() {
-    fetch("/change_color", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "change" })
-    })
-    .then(response => response.text())
-    .then(data => console.log(`Response: ${data}`))
-    .catch(error => console.error("Error:", error));
-}
-
-
-//MARK: PRINT VALUE TEMPERATURE 
-let tempInterval;
-const maxEntries = 3;
-
-function turnOnTemp() {
-    console.log("turnOnTemp called");  // Log para verificar si la función se llama
-    tempInterval = setInterval(() => {
-        fetch("/turn_on_temp")
-            //.then(response => response.json())
-            .then(data => {
-                console.log("Temperature received:", data.Temperature);  // Log para verificar el valor recibido
-                const tempOutput = document.getElementById("temperature-output");
-
-                // Redondear a 1 decimal
-                const roundedTemp = parseFloat(data.Temperature).toFixed(1);
-
-                // Crear un nuevo elemento para la nueva temperatura
-                const newTemp = document.createElement("div");
-                newTemp.innerText = `Temperature: ${roundedTemp} °C`;
-
-                // Añadir la nueva temperatura al final
-                tempOutput.appendChild(newTemp);
-
-                // Si hay más de 3 entradas, eliminar la más antigua
-                while (tempOutput.childElementCount > maxEntries) {
-                    tempOutput.removeChild(tempOutput.firstChild);
-                }
-            })
-            .catch(error => console.error("Error:", error));
-    }, 1000);
-}
-
-function turnOffTemp() {
-    console.log("turnOffTemp called");  // Log para verificar si la función se llama
-    clearInterval(tempInterval);
-}
-
-
-//MARK: PRINT VALUE ADC 
-let adcInterval;
-
-function turnOnADC() {
-    adcInterval = setInterval(() => {
-        fetch("/get_adc")
-            .then(response => response.json())
-            .then(data => {
-                console.log("ADC Value received:", data.adc_value);  // Log para verificar el valor recibido
-                document.getElementById("adc-value").innerText = `ADC Value: ${data.adc_value}`;
-            })
-            .catch(error => console.error("Error:", error));
-    }, 1000);
-}
-
-function turnOffADC() {
-    
-    console.log("turnOffADC called");  // Log para verificar si la función se llama
-    clearInterval(adcInterval);
-}
-
-//MARK: RGB CRHOMATIC CIRCLE
-function rgb_crhomatic_circle(rgb) {
-
-    // Crear el cuerpo de la solicitud con los datos configurados
-    const data = {
-        red: rgb[0],
-        green: rgb[1],
-        blue: rgb[2]
-    };
-    fetch("/rgb_crhomatic_circle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.text())
-    .then(data => alert(`Response: ${data}`))
-    .catch(error => console.error("Error:", error));
-} 
-
-
-//MARK: DRAW CRHOMATIC CIRCLE
-function drawChromaticCircle() {
-    const canvas = document.getElementById('chromatic-circle');
-    const ctx = canvas.getContext('2d');
-
-    const centerX = (canvas.width / 2) ;
-    const centerY = (canvas.height / 2);
-    const radius = Math.min(centerX, centerY);
-
-    console.log("Coordenadas del radio:", radius);
-    console.log("Coordenadas del centro (x, y):", centerX, centerY); // Depuración de coordenadas
-
-    // Dibujar el círculo cromático
-    for (let angle = 0; angle < 360; angle += 1) {
-        const startAngle = (angle -2 ) * Math.PI / 180;
-        const endAngle = angle * Math.PI / 180;
-
-        // Usar el ángulo para calcular el color HSL
-        const hue = angle;
-        const saturation = 100;
-        const lightness = 50;
-
-        // Convertir HSL a un color CSS
-        const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
-
-        // Dibujar un segmento del círculo
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.arc(centerX, centerY, radius-49, startAngle, endAngle);
-        ctx.closePath();
-
-        // Rellenar el segmento con el color correspondiente
-        ctx.fillStyle = color;
-        ctx.fill();
-    }
-
-    // Evento para obtener el color al hacer clic
-    canvas.addEventListener("click", (event) => {
-        const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left-75;
-        const y = event.clientY - rect.top-75;
+    // Función para mostrar secciones
+    const showSection = (sectionId) => {
+        sections.forEach(section => {
+            section.classList.remove('active', 'hidden');
+            section.classList.add('hidden');
+        });
         
-        console.log("Coordenadas del clic (x, y):", x, y); // Depuración de coordenadas
+        const activeSection = document.querySelector(`.${sectionId}-section`);
+        if(activeSection) {
+            activeSection.classList.remove('hidden');
+            activeSection.classList.add('active');
+        }
+    };
 
+    // Navegación del menú
+    menuItems.forEach(item => {
+        item.addEventListener('click', () => {
+            menuItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            showSection(item.dataset.section);
+        });
+    });
+
+    // Toggle contraseña
+    togglePassword.addEventListener('click', () => {
+        const type = passwordInput.type === 'password' ? 'text' : 'password';
+        passwordInput.type = type;
+        togglePassword.querySelector('.eye-icon').style.opacity = type === 'text' ? '0.7' : '1';
+    });
+
+    // Formulario de red
+    document.getElementById('networkForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button');
+        btn.disabled = true;
+        btn.textContent = 'Actualizando...';
     
-        const dx = x - centerX;
-        const dy = y - centerY;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        console.log("Distancia desde el centro (distance):", distance); // Depuración de distancia
-        // Verificar si el clic está dentro del círculo
-        if (distance <= radius) {
-            // Calcular el ángulo correctamente (en grados)
-            let angle = Math.atan2(dy, dx) * (180/ Math.PI);
+        try {
+            const ssid = document.getElementById('ssid').value;
+            const password = document.getElementById('networkPassword').value;
+    
+            const response = await fetch('/connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ssid, pass: password })
+            });
+    
+            if (!response.ok) throw new Error('Error en la respuesta');
             
-            // Asegurar que el ángulo sea positivo en el rango [0, 360]
-            if (angle < 0) {
-                angle += 360;
-            }
-
-            console.log("Ángulo calculado (angle):", angle); // Depuración del ángulo
-    
-            // Convertir HSL a RGB
-            const h = angle / 360; // Asegurar que h esté en el rango [0, 1]
-            const rgb = hslToRgb(angle / 360, 0.9, 0.6);
-
-            console.log("Valores HSL (h, s, l):", h, 1, 0.5); // Depuración de HSL
-            console.log("Valores RGB (r, g, b):", rgb); // Depuración de RGB
-    
-            // Mostrar los valores RGB en los inputs
-            document.getElementById("red-value").value = rgb[0];
-            document.getElementById("green-value").value = rgb[1];
-            document.getElementById("blue-value").value = rgb[2];
-            rgb_crhomatic_circle(rgb)
-        } else {
-            // Si el clic está fuera del círculo, limpiar los valores RGB
-            document.getElementById("red-value").value = "";
-            document.getElementById("green-value").value = "";
-            document.getElementById("blue-value").value = "";
-            console.log("Clic fuera del círculo"); // Depuración adicional
+            const result = await response.text();
+            btn.textContent = '¡Red Actualizada!';
+            alert(result);
+        } catch (error) {
+            console.error('Error:', error);
+            btn.textContent = 'Error de conexión';
+            alert('Error al actualizar la configuración');
+        } finally {
+            setTimeout(() => {
+                btn.textContent = 'Actualizar Red';
+                btn.disabled = false;
+            }, 2000);
         }
     });
-    
-}
 
-// Función para convertir HSL a RGB
-function hslToRgb(h, s, l) {
-    let r, g, b;
+    // Gestión de firmware
+let otaTimerVar = null;
+let seconds = null;
 
-    if (s === 0) {
-        r = g = b = l; // Escala de grises
-    } else {
-        const hue2rgb = (p, q, t) => {
-            if (t < 0) t += 1;
-            if (t > 1) t -= 1;
-            if (t < 1 / 6) return p + (q - p) * 6 * t;
-            if (t < 1 / 2) return q;
-            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-            return p;
-        };
-
-        const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-        const p = 2 * l - q;
-        r = hue2rgb(p, q, h + 1 / 3);
-        g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1 / 3);
-    }
-
-    return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
-}
-
-// Llamar a la función para dibujar el círculo cromático
-drawChromaticCircle();
-
-//MARK: SLIDER
-function slider_cromatic_circle(currentValue) {
-    const numericValue = Number(currentValue);
-
-    // Crear el cuerpo de la solicitud con los datos configurados
-    const data = {
-        value: numericValue,
-    };
-    fetch("/slider_crhomatic_circle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.text())
-    .then(data => console.log(`Response: ${data}`))
-    .catch(error => console.error("Error:", error));
-} 
-
-// Obtener el slider y el elemento para mostrar el valor
-const brightnessSlider = document.getElementById('brightness-slider');
-const sliderValue = document.getElementById('slider-value');
-// Actualizar el valor cuando el slider cambie
-brightnessSlider.addEventListener("input", function () {
-    const currentValue = this.value; // Obtener el valor actual del slider
-    sliderValue.textContent = currentValue; // Actualizar el texto en la interfaz
-    slider_cromatic_circle(currentValue); // Enviar el valor al servidor
+// Modificar el event listener del input de archivo
+document.getElementById('firmwareFile').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    document.getElementById('fileName').textContent = file ? `${file.name} (${(file.size/1024).toFixed(1)} KB)` : 'Ningún archivo seleccionado';
+    document.getElementById('flashBtn').disabled = !file;
 });
 
-//MARK: TIME ON OFF
-function setTime(){
-    let min = document.getElementById('time_on').value;
-    //let max = document.getElementById('time_off').value;
-
-    if (min === "") {
-        alert("Enter Min and Max values for RED");
+// Nueva función de actualización de firmware
+function handleFirmwareUpdate() {
+    const fileInput = document.getElementById('firmwareFile');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        alert('Por favor selecciona un archivo .bin primero');
         return;
     }
 
-    // Crear el cuerpo de la solicitud con los datos configurados
-    const data = {
-        min: parseFloat(min),
-        //max: parseFloat(max)
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/OTAupdate');
+    xhr.responseType = 'blob';
+
+    // Actualizar progreso
+    xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+            const percent = (e.loaded / e.total) * 100;
+            document.getElementById('fwProgress').style.width = `${percent}%`;
+        }
+    });
+
+    // Manejar respuesta
+    xhr.onload = () => {
+        if (xhr.status === 200) {
+            checkOTAStatus();
+        } else {
+            document.getElementById('fileName').textContent = 'Error en la subida del firmware';
+            document.getElementById('flashBtn').disabled = false;
+        }
     };
 
-    // Enviar los datos al servidor mediante una solicitud POST
-    fetch("/set_time", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data)
-    })
-    .then(response => response.text())
-    .then(data => alert(`Response: ${data}`))
-    .catch(error => console.error("Error:", error));
+    xhr.onerror = () => {
+        document.getElementById('fileName').textContent = 'Error de conexión';
+        document.getElementById('flashBtn').disabled = false;
+    };
+
+    document.getElementById('flashBtn').disabled = true;
+    document.getElementById('fileName').textContent = `Subiendo ${file.name}...`;
+    xhr.send(formData);
 }
 
+// Función para verificar estado OTA
+function checkOTAStatus() {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/OTAstatus');
+    xhr.onload = () => {
+        if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            
+            if (response.ota_update_status === 1) {
+                seconds = 10;
+                startRebootTimer();
+            } else if (response.ota_update_status === -1) {
+                document.getElementById('fileName').textContent = 'Error en el firmware (verifica el archivo .bin)';
+            }
+        }
+    };
+    xhr.send();
+}
 
+// Temporizador de reinicio
+function startRebootTimer() {
+    document.getElementById('fileName').textContent = `Actualización exitosa! Reiniciando en ${seconds} segundos...`;
+    
+    if (--seconds <= 0) {
+        clearTimeout(otaTimerVar);
+        window.location.href = '/';
+    } else {
+        otaTimerVar = setTimeout(startRebootTimer, 1000);
+    }
+}
 
+// Actualizar el event listener del botón Flash
+document.getElementById('flashBtn').addEventListener('click', handleFirmwareUpdate);
+
+    // Programación de registros
+    document.getElementById('addSchedule').addEventListener('click', (e) => {
+        e.preventDefault();
+        
+        const dateTime = document.getElementById('scheduleTime').value;
+        const days = Array.from(document.querySelectorAll('input[name="days"]:checked'))
+                         .map(checkbox => checkbox.value);
+        
+        if (!dateTime || scheduleEntries.length >= 10) return;
+        
+        scheduleEntries.push({
+            id: Date.now(),
+            date: new Date(dateTime).toLocaleString(),
+            days: days.length > 0 ? days.join(', ') : 'Una vez'
+        });
+        
+        updateScheduleList();
+        document.getElementById('scheduleTime').value = '';
+        document.querySelectorAll('input[name="days"]:checked').forEach(cb => cb.checked = false);
+    });
+
+    const updateScheduleList = () => {
+        const entriesList = document.getElementById('scheduleEntries');
+        entriesList.innerHTML = scheduleEntries.map(entry => `
+            <div class="schedule-entry">
+                <div class="entry-info">
+                    <div class="entry-date">${entry.date}</div>
+                    <div class="entry-days">${entry.days}</div>
+                </div>
+                <button class="btn delete-btn" data-id="${entry.id}">🗑️</button>
+            </div>
+        `).join('');
+        
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const id = parseInt(btn.dataset.id);
+                scheduleEntries = scheduleEntries.filter(entry => entry.id !== id);
+                updateScheduleList();
+            });
+        });
+    };
+
+    // Inicialización
+    showSection('network');
+    document.querySelector('.menu-item[data-section="network"]').classList.add('active');
+});
+
+class InternetClock {
+    constructor() {
+        this.clockElement = document.querySelector('.internet-clock');
+        this.loader = document.querySelector('.clock-loader');
+        this.hoursElement = document.querySelector('.hours');
+        this.minutesElement = document.querySelector('.minutes');
+        this.secondsElement = document.querySelector('.seconds');
+        this.dateElement = document.querySelector('.date-display');
+        this.syncStatus = document.querySelector('.sync-status');
+        this.syncBtn = document.querySelector('.sync-btn');
+        
+        this.timeAPI = 'https://worldtimeapi.org/api/ip';
+        this.lastSync = null;
+        this.timeOffset = 0;
+        
+        this.init();
+    }
+
+    async init() {
+        this.syncBtn.addEventListener('click', () => this.syncTime());
+        await this.syncTime();
+        this.startClock();
+    }
+
+    async syncTime() {
+        try {
+            this.showLoader();
+            const response = await fetch(this.timeAPI);
+            const data = await response.json();
+            
+            const serverTime = new Date(data.utc_datetime);
+            const localTime = new Date();
+            this.timeOffset = serverTime - localTime;
+            
+            this.lastSync = new Date();
+            this.updateDisplay(serverTime);
+            this.syncStatus.textContent = `🟢 Sincronizado: ${data.timezone}`;
+        } catch (error) {
+            console.error('Error sincronizando:', error);
+            this.syncStatus.textContent = '🔴 Usando hora local';
+            this.timeOffset = 0;
+        } finally {
+            this.hideLoader();
+        }
+    }
+
+    showLoader() {
+        this.clockElement.classList.add('syncing');
+        this.loader.style.display = 'block';
+    }
+
+    hideLoader() {
+        this.clockElement.classList.remove('syncing');
+        this.loader.style.display = 'none';
+    }
+
+    startClock() {
+        setInterval(() => {
+            const adjustedTime = new Date(Date.now() + this.timeOffset);
+            this.updateDisplay(adjustedTime);
+        }, 1000);
+    }
+
+    updateDisplay(time) {
+        this.hoursElement.textContent = time.getHours().toString().padStart(2, '0');
+        this.minutesElement.textContent = time.getMinutes().toString().padStart(2, '0');
+        this.secondsElement.textContent = time.getSeconds().toString().padStart(2, '0');
+        
+        this.dateElement.textContent = time.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }).replace(/^\w/, c => c.toUpperCase());
+    }
+}
+
+// Inicializar al cargar
+document.addEventListener('DOMContentLoaded', () => {
+    new InternetClock();
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const slider = document.getElementById('servoSlider');
+    const percentageInput = document.getElementById('percentageInput');
+    const percentageDisplay = document.querySelector('.percentage-display');
+    const setServoBtn = document.getElementById('setServo');
+    const manualBtn = document.getElementById('manualMode');
+    const autoBtn = document.getElementById('autoMode');
+    let currentMode = 'manual';
+
+    // Función para mapear 0-100% a 0-180 grados
+    function mapPercentageToAngle(percentage) {
+        return Math.round((percentage / 100) * 180);
+    }
+
+    function updateServo(value) {
+        const percentage = Math.min(100, Math.max(0, value));
+        const angle = (percentage / 100) * 90;
+        
+        // Actualizar visualización
+        document.querySelector('.shutter.left').style.transform = `rotateY(-${angle}deg)`;
+        document.querySelector('.shutter.right').style.transform = `rotateY(${angle}deg)`;
+        percentageDisplay.textContent = `${percentage}%`;
+        
+        // Enviar comando al ESP (mapeado a 0-180)
+        if(currentMode === 'manual') {
+            const servoAngle = mapPercentageToAngle(percentage);
+            
+            fetch("/set_time", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ min: servoAngle })
+            })
+            .then(response => response.text())
+            .then(data => console.log(`Respuesta ESP: ${data}`))
+            .catch(error => console.error("Error:", error));
+        }
+    }
+
+    // Event listeners
+    slider.addEventListener('input', (e) => {
+        const value = e.target.value;
+        percentageInput.value = value;
+        updateServo(value);
+    });
+
+    percentageInput.addEventListener('input', (e) => {
+        let value = Math.min(100, Math.max(0, e.target.value));
+        slider.value = value;
+        updateServo(value);
+    });
+
+    setServoBtn.addEventListener('click', () => {
+        updateServo(percentageInput.value);
+        alert('Posición actualizada');
+    });
+
+    // Handler de modos
+    function setMode(mode) {
+        currentMode = mode;
+        document.querySelector('.servo-control').classList.toggle('auto-mode', mode === 'auto');
+        manualBtn.classList.toggle('active', mode === 'manual');
+        autoBtn.classList.toggle('active', mode === 'auto');
+        
+        // Enviar modo al ESP
+        fetch("/set_time", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mode: mode.toUpperCase() })
+        })
+        .then(response => response.text())
+        .then(data => console.log(`Modo cambiado: ${data}`))
+        .catch(error => console.error("Error:", error));
+    }
+
+    // Event listeners para modos
+    manualBtn.addEventListener('click', () => setMode('manual'));
+    autoBtn.addEventListener('click', () => setMode('auto'));
+
+    // Inicialización
+    setMode('manual');
+});

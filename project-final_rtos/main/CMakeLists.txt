@@ -1,3 +1,4 @@
+file(GLOB ANIMATION_FILES "webpage/assets/animations/*.webp")
 idf_component_register(SRCS "main.c" 
                         "ADC_library/src/ADC_library.c"
                         "uart_library/src/uart_library.c"
@@ -12,4 +13,4 @@ idf_component_register(SRCS "main.c"
                                     "server_library/include"
                                     "PWM_Control/include"
                                     "."
-                    EMBED_FILES "webpage/index.html" "webpage/script.js" "webpage/styles.css")
+                    EMBED_FILES "webpage/index.html" "webpage/script.js" "webpage/styles.css" ) 
