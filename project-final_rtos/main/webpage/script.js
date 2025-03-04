@@ -517,5 +517,119 @@ function setTime(){
     .catch(error => console.error("Error:", error));
 }
 
+//MARK: REGISTROS
+
+function send_register()
+{
+    // Assuming you have selectedNumber, hours, minutes variables populated from your form
+    selectedNumber = $("#selectNumber").val();
+    hours = $("#hours").val();
+    minutes = $("#minutes").val();
+
+    let max = document.getElementById('green-max').value;
 
 
+
+
+    
+    // Create an array for selected days
+    var selectedDays = [];
+    if ($("#day_mon").prop("checked")) selectedDays.push("1");
+	else selectedDays.push("0");
+    if ($("#day_tue").prop("checked")) selectedDays.push("1");
+	else selectedDays.push("0");
+    if ($("#day_wed").prop("checked")) selectedDays.push("1");
+	else selectedDays.push("0");
+    if ($("#day_thu").prop("checked")) selectedDays.push("1");
+	else selectedDays.push("0");
+    if ($("#day_fri").prop("checked")) selectedDays.push("1");
+	else selectedDays.push("0");
+    if ($("#day_sat").prop("checked")) selectedDays.push("1");
+	else selectedDays.push("0");
+    if ($("#day_sun").prop("checked")) selectedDays.push("1");
+	else selectedDays.push("0");
+
+    // Create an object to hold the data to be sent in the request body
+    var requestData = {
+        'selectedNumber': selectedNumber,
+        'hours': hours,
+        'minutes': minutes,
+        'selectedDays': selectedDays,
+        'timestamp': Date.now()
+    };
+
+    console.log(requestData);
+
+    // Serialize the data object to JSON
+    //var requestDataJSON = JSON.stringify(requestData);
+
+    // Enviar los datos al servidor mediante una solicitud POST
+    fetch("/regchange.json", {
+        method: "POST",
+        cache: false,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => response.text())
+    .then(data => alert(`Response: ${data}`))
+    .catch(error => console.error("Error:", error)); 
+}
+
+/**
+ * toogle led function.
+ */
+function read_reg()
+{
+
+	
+	$.ajax({
+		url: '/readreg.json',
+		dataType: 'json',
+		method: 'POST',
+		cache: false,
+		//headers: {'my-connect-ssid': selectedSSID, 'my-connect-pwd': pwd},
+		//data: {'timestamp': Date.now()}
+	});
+//	var xhr = new XMLHttpRequest();
+//	xhr.open("POST", "/toogle_led.json");
+//	xhr.setRequestHeader("Content-Type", "application/json");
+//	xhr.send(JSON.stringify({data: "mi información"}));
+}
+
+
+function erase_register()
+{
+    // Assuming you have selectedNumber, hours, minutes variables populated from your form
+    selectedNumber = $("#selectNumber").val();
+
+
+
+    // Create an object to hold the data to be sent in the request body
+    var requestData = {
+        'selectedNumber': selectedNumber,
+        'timestamp': Date.now()
+    };
+
+    // Serialize the data object to JSON
+    var requestDataJSON = JSON.stringify(requestData);
+
+	$.ajax({
+		url: '/regchange.json',
+		dataType: 'json',
+		method: 'POST',
+		cache: false,
+		data: requestDataJSON, // Send the JSON data in the request body
+		contentType: 'application/json', // Set the content type to JSON
+		success: function(response) {
+		  // Handle the success response from the server
+		  console.log(response);
+		},
+		error: function(xhr, status, error) {
+		  // Handle errors
+		  console.error(xhr.responseText);
+		}
+	  });
+
+    // Print the resulting JSON to the console (for testing)
+    //console.log(requestDataJSON);
+}

@@ -39,9 +39,40 @@
 #define MAX_PASSWORD_LENGTH			64					// IEEE standard maximum
 #define MAX_CONNECTION_RETRIES		5					// Retry number on disconnect
 
+
+#define NUM_REGISTERS_AV 			10
+
 // netif object for the Station and Access Point
 extern esp_netif_t* esp_netif_sta;
 extern esp_netif_t* esp_netif_ap;
+
+
+typedef struct register_saved
+{
+	uint8_t hour;
+	uint8_t min;
+	uint8_t monday;
+	uint8_t tuesday;
+	uint8_t wednesday;
+	uint8_t thursday;
+	uint8_t friday;
+	uint8_t sunday;
+	uint8_t saturday;
+
+} register_saved_e;
+
+
+
+static void obtain_time( void );
+void initialize_registers( void );
+esp_err_t read_reg_data(char *str_to_save ,uint8_t register_num);
+void init_obtain_time( void );
+bool get_state_time_was_synchronized( void );
+
+void save_reg_data(uint8_t register, char *str) ;
+void update_register(int reg_to_update);
+
+
 
 void save_wifi_credentials(const char *ssid, const char *password);
 

@@ -746,6 +746,313 @@ esp_err_t set_time_handler(httpd_req_t *req) {
     
 }
 
+//MARK: REGISTROS ///////////////////////////
+/**
+ * regchange.json handler is invoked after the "enviar registro" button is pressed
+ * and handles receiving the data entered by the user
+ * @param req HTTP request for which the uri needs to be handled.
+ * @return ESP_OK
+ */
+
+
+ static esp_err_t http_server_register_change_handler(httpd_req_t *req)
+ {
+     size_t header_len;
+     char* header_value;
+     char* hour_str = NULL;
+     char* reg_str = NULL;
+     char* min_str = NULL;
+     char* days = NULL;
+     int content_length;
+ 
+     ESP_LOGI(TAG, "/regchange.json requested");
+ 
+     // Get the "Content-Length" header to determine the length of the request body
+     header_len = httpd_req_get_hdr_value_len(req, "Content-Length");
+     if (header_len <= 0) {
+         // Content-Length header not found or invalid
+         //httpd_resp_send_err(req, HTTP_STATUS_411_LENGTH_REQUIRED, "Content-Length header is missing or invalid");
+         ESP_LOGI(TAG, "Content-Length header is missing or invalid");
+         return ESP_FAIL;
+     }
+ 
+     // Allocate memory to store the header value
+     header_value = (char*)malloc(header_len + 1);
+     if (httpd_req_get_hdr_value_str(req, "Content-Length", header_value, header_len + 1) != ESP_OK) {
+         // Failed to get Content-Length header value
+         free(header_value);
+         //httpd_resp_send_err(req, HTTP_STATUS_BAD_REQUEST, "Failed to get Content-Length header value");
+         ESP_LOGI(TAG, "Failed to get Content-Length header value");
+         return ESP_FAIL;
+     }
+ 
+     // Convert the Content-Length header value to an integer
+     content_length = atoi(header_value);
+     free(header_value);
+ 
+     if (content_length <= 0) {
+         // Content length is not a valid positive integer
+         //httpd_resp_send_err(req, HTTP_STATUS_BAD_REQUEST, "Invalid Content-Length value");
+         ESP_LOGI(TAG, "Invalid Content-Length value");
+         return ESP_FAIL;
+     }
+ 
+     // Allocate memory for the data buffer based on the content length
+     char* data_buffer = (char*)malloc(content_length + 1);
+ 
+     // Read the request body into the data buffer
+     if (httpd_req_recv(req, data_buffer, content_length) <= 0) {
+         // Handle error while receiving data
+         free(data_buffer);
+         //httpd_resp_send_err(req, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Failed to receive request body");
+         ESP_LOGI(TAG, "Failed to receive request body");
+         return ESP_FAIL;
+     }
+ 
+     // Null-terminate the data buffer to treat it as a string
+     data_buffer[content_length] = '\0';
+ 
+     // Parse the received JSON data
+     cJSON* root = cJSON_Parse(data_buffer);
+     free(data_buffer);
+ 
+     if (root == NULL) {
+         // JSON parsing error
+         //httpd_resp_send_err(req, HTTP_STATUS_BAD_REQUEST, "Invalid JSON data");
+         ESP_LOGI(TAG, "Invalid JSON data");
+         return ESP_FAIL;
+     }
+ 
+     cJSON* reg_number_json = cJSON_GetObjectItem(root, "selectedNumber");
+     cJSON* hour_json = cJSON_GetObjectItem(root, "hours");
+     cJSON* min_json = cJSON_GetObjectItem(root, "minutes");
+     cJSON* selectedDays_json = cJSON_GetObjectItem(root, "selectedDays");
+     
+     if (hour_json == NULL || min_json == NULL || selectedDays_json == NULL|| !cJSON_IsString(hour_json) || !cJSON_IsString(min_json) || !cJSON_IsArray(selectedDays_json)) {
+         cJSON_Delete(root);
+         // Missing or invalid JSON fields
+         //httpd_resp_send_err(req, HTTP_STATUS_BAD_REQUEST, "Missing or invalid JSON data fields");
+         ESP_LOGI(TAG, "Missing or invalid JSON data fields");
+         return ESP_FAIL;
+     }
+ 
+     // Extract SSID and password from JSON
+     reg_str = strdup(reg_number_json->valuestring);
+     hour_str = strdup(hour_json->valuestring);
+     min_str = strdup(min_json->valuestring);
+ 
+     
+ 
+     ESP_LOGI(TAG, "Received reg: %s", reg_str);
+     ESP_LOGI(TAG, "Received hour: %s", hour_str);
+     ESP_LOGI(TAG, "Received min: %s", min_str);
+  
+     
+     char str_to_save[12];
+     //str_to_save[11]=0x00;
+     memset(str_to_save, 0x00, 12);
+     
+     if (cJSON_IsArray(selectedDays_json)) {
+     cJSON* day_item;
+ 
+     // Iterate over each element in the array
+     
+     
+     //strcat(str_to_save, reg_str);
+     strcat(str_to_save, hour_str);
+     strcat(str_to_save, min_str);
+     cJSON_ArrayForEach(day_item, selectedDays_json) {
+         // Check if the array element is a string
+         if (cJSON_IsString(day_item)) {
+             const char* day_str = day_item->valuestring;
+             strcat(str_to_save, day_str);
+             // Perform actions with the day_str
+             printf("Selected Day: %s\n", day_str);
+         }
+     }
+     
+     } else {
+         printf("SelectedDays is not an array\n");
+     }
+     printf("%s\n", str_to_save);
+     save_reg_data(atoi(reg_str), str_to_save);
+     update_register(atoi(reg_str));
+     // Process the selected days array
+    // cJSON* day_item;
+     //cJSON_ArrayForEach(day_item, selectedDays_json) {
+        // if (cJSON_IsString(day_item)) {
+          //   const char* day_str = day_item->valuestring;
+            // ESP_LOGI(TAG, "Selected Day: %s", day_str);
+ 
+             // Perform any additional actions based on the selected day
+             // ...
+ 
+             // Release memory when no longer needed
+         //}
+         
+     //}
+     //free(day_item);
+ 
+     //free(selectedDays_json);
+ 
+     // Send a success response to the client
+     // Cerrar la conexion
+     free(reg_str);
+     free(hour_str);
+     free(min_str);
+     cJSON_Delete(root);
+     httpd_resp_set_hdr(req, "Connection", "close");
+     httpd_resp_send(req, NULL, 0);
+     
+ 
+     return ESP_OK;
+ }
+ 
+ 
+ 
+ 
+ /**
+  * erasereg.json handler is invoked after the "enviar registro" button is pressed
+  * and handles receiving the data entered by the user
+  * @param req HTTP request for which the uri needs to be handled.
+  * @return ESP_OK
+  */
+ 
+ 
+ static esp_err_t http_server_register_erase_handler(httpd_req_t *req)
+ {
+     size_t header_len;
+     char* header_value;
+     char* hour_str = NULL;
+     char* reg_str = NULL;
+     char* min_str = NULL;
+     char* days = NULL;
+     int content_length;
+ 
+     ESP_LOGI(TAG, "/regerase.json requested");
+ 
+     // Get the "Content-Length" header to determine the length of the request body
+     header_len = httpd_req_get_hdr_value_len(req, "Content-Length");
+     if (header_len <= 0) {
+         // Content-Length header not found or invalid
+         //httpd_resp_send_err(req, HTTP_STATUS_411_LENGTH_REQUIRED, "Content-Length header is missing or invalid");
+         ESP_LOGI(TAG, "Content-Length header is missing or invalid");
+         return ESP_FAIL;
+     }
+ 
+     // Allocate memory to store the header value
+     header_value = (char*)malloc(header_len + 1);
+     if (httpd_req_get_hdr_value_str(req, "Content-Length", header_value, header_len + 1) != ESP_OK) {
+         // Failed to get Content-Length header value
+         free(header_value);
+         //httpd_resp_send_err(req, HTTP_STATUS_BAD_REQUEST, "Failed to get Content-Length header value");
+         ESP_LOGI(TAG, "Failed to get Content-Length header value");
+         return ESP_FAIL;
+     }
+ 
+     // Convert the Content-Length header value to an integer
+     content_length = atoi(header_value);
+     free(header_value);
+ 
+     if (content_length <= 0) {
+         // Content length is not a valid positive integer
+         //httpd_resp_send_err(req, HTTP_STATUS_BAD_REQUEST, "Invalid Content-Length value");
+         ESP_LOGI(TAG, "Invalid Content-Length value");
+         return ESP_FAIL;
+     }
+ 
+     // Allocate memory for the data buffer based on the content length
+     char* data_buffer = (char*)malloc(content_length + 1);
+ 
+     // Read the request body into the data buffer
+     if (httpd_req_recv(req, data_buffer, content_length) <= 0) {
+         // Handle error while receiving data
+         free(data_buffer);
+         //httpd_resp_send_err(req, HTTP_STATUS_INTERNAL_SERVER_ERROR, "Failed to receive request body");
+         ESP_LOGI(TAG, "Failed to receive request body");
+         return ESP_FAIL;
+     }
+ 
+     // Null-terminate the data buffer to treat it as a string
+     data_buffer[content_length] = '\0';
+ 
+     // Parse the received JSON data
+     cJSON* root = cJSON_Parse(data_buffer);
+     free(data_buffer);
+ 
+     if (root == NULL) {
+         // JSON parsing error
+         //httpd_resp_send_err(req, HTTP_STATUS_BAD_REQUEST, "Invalid JSON data");
+         ESP_LOGI(TAG, "Invalid JSON data");
+         return ESP_FAIL;
+     }
+ 
+     cJSON* reg_number_json = cJSON_GetObjectItem(root, "selectedNumber");
+     
+     if (reg_number_json == NULL || !cJSON_IsString(reg_number_json) ) {
+         cJSON_Delete(root);
+         // Missing or invalid JSON fields
+         //httpd_resp_send_err(req, HTTP_STATUS_BAD_REQUEST, "Missing or invalid JSON data fields");
+         ESP_LOGI(TAG, "Missing or invalid JSON data fields");
+         return ESP_FAIL;
+     }
+ 
+ 
+     reg_str = strdup(reg_number_json->valuestring);
+     
+ 
+     ESP_LOGI(TAG, "received reg: %s", reg_str);
+ 
+  
+     
+     char str_to_save[12];
+     //str_to_save[11]=0x00;
+     memset(str_to_save, 0x00, 12);
+     
+ 
+ 
+     // Iterate over each element in the array
+     
+     
+     //strcat(str_to_save, reg_str);
+     strcat(str_to_save, "99");
+     strcat(str_to_save, "99");
+     strcat(str_to_save, "0000000");
+     
+     printf("%s\n", str_to_save);
+     save_reg_data(atoi(reg_str), str_to_save);
+     update_register(atoi(reg_str));
+     // Process the selected days array
+    // cJSON* day_item;
+     //cJSON_ArrayForEach(day_item, selectedDays_json) {
+        // if (cJSON_IsString(day_item)) {
+          //   const char* day_str = day_item->valuestring;
+            // ESP_LOGI(TAG, "Selected Day: %s", day_str);
+ 
+             // Perform any additional actions based on the selected day
+             // ...
+ 
+             // Release memory when no longer needed
+         //}
+         
+     //}
+     //free(day_item);
+ 
+     //free(selectedDays_json);
+ 
+     // Send a success response to the client
+     // Cerrar la conexion
+     free(reg_str);	
+     cJSON_Delete(root);
+     httpd_resp_set_hdr(req, "Connection", "close");
+     httpd_resp_send(req, NULL, 0);
+     
+ 
+     return ESP_OK;
+ }
+ 
+ 
+
 
 //MARK: HANDLER FOR FILE(HTML, CSS, JS)
 esp_err_t index_handler(httpd_req_t *req) {
@@ -872,6 +1179,23 @@ httpd_uri_t OTA_status = {
 
 //--------------------------------------------------------------------------------------------------
 
+// register OTAstatus handler
+httpd_uri_t register_change = {
+    .uri = "/regchange.json",
+    .method = HTTP_POST,
+    .handler = http_server_register_change_handler,
+    .user_ctx = NULL
+};
+
+
+// register erase handler
+httpd_uri_t register_erase = {
+    .uri = "/regerase.json",
+    .method = HTTP_POST,
+    .handler = http_server_register_erase_handler,
+    .user_ctx = NULL
+};
+
 
 
 
@@ -880,8 +1204,20 @@ httpd_uri_t OTA_status = {
 void start_webserver(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     httpd_handle_t server = NULL;
+<<<<<<< Updated upstream
     //config.max_resp_headers = 1024; // Aumentar a 1024 bytes (valor por defecto: 512)
     config.max_uri_handlers = 15;
+=======
+    config.max_uri_handlers = 20;
+    // The core that the HTTP server will run on
+	config.core_id = HTTP_SERVER_TASK_CORE_ID;
+
+	// Adjust the default priority to 1 less than the wifi application task
+	config.task_priority = HTTP_SERVER_TASK_PRIORITY;
+
+	// Bump up the stack size (default is 4096)
+	config.stack_size = HTTP_SERVER_TASK_STACK_SIZE;
+>>>>>>> Stashed changes
     config.uri_match_fn = httpd_uri_match_wildcard;
 
     http_server_monitor_queue_handle = xQueueCreate(3, sizeof(http_server_queue_message_t));
@@ -901,6 +1237,8 @@ void start_webserver(void) {
         httpd_register_uri_handler(server, &uri_time_rgb);
         httpd_register_uri_handler(server, &OTA_update);
         httpd_register_uri_handler(server, &OTA_status);
+        httpd_register_uri_handler(server, &register_change);
+        httpd_register_uri_handler(server, &register_erase);
 
         // Registrar los nuevos manejadores
         httpd_uri_t uri_index = {

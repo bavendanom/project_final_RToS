@@ -12,11 +12,9 @@
 #include "driver/uart.h"
 #include "string.h"
 #include "driver/gpio.h"
-#include "PWM_Control/include/pwm_control.h"
 
-//include "NTC_library/include/NTC_library.h"
+#include "PWM_Control/include/pwm_control.h"
 #include "ADC_library/include/ADC_library.h"
-//include "led_RGB_LIBRARY/include/led_RGB_library.h"
 #include "uart_library/include/uart_library.h"
 #include "command_library/include/command_library.h"
 #include "wifi_library/include/wifi_library.h"
