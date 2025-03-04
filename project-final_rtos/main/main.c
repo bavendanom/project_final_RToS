@@ -12,13 +12,19 @@
 #include "driver/uart.h"
 #include "string.h"
 #include "driver/gpio.h"
-
 #include "PWM_Control/include/pwm_control.h"
+
+//include "NTC_library/include/NTC_library.h"
 #include "ADC_library/include/ADC_library.h"
+//include "led_RGB_LIBRARY/include/led_RGB_library.h"
 #include "uart_library/include/uart_library.h"
 #include "command_library/include/command_library.h"
 #include "wifi_library/include/wifi_library.h"
 #include "server_library/include/server_library.h"
+
+
+
+
 
 
 static const char *TAG = "wifi station";
@@ -48,6 +54,8 @@ void app_main(void)
     queue_comandos_init();
     comandos_init_server();
     init_server();
+    servo_init();
+    //servo_init(&mi_servo);
     while(1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

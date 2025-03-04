@@ -1204,10 +1204,7 @@ httpd_uri_t register_erase = {
 void start_webserver(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     httpd_handle_t server = NULL;
-<<<<<<< Updated upstream
-    //config.max_resp_headers = 1024; // Aumentar a 1024 bytes (valor por defecto: 512)
-    config.max_uri_handlers = 15;
-=======
+
     config.max_uri_handlers = 20;
     // The core that the HTTP server will run on
 	config.core_id = HTTP_SERVER_TASK_CORE_ID;
@@ -1217,7 +1214,7 @@ void start_webserver(void) {
 
 	// Bump up the stack size (default is 4096)
 	config.stack_size = HTTP_SERVER_TASK_STACK_SIZE;
->>>>>>> Stashed changes
+
     config.uri_match_fn = httpd_uri_match_wildcard;
 
     http_server_monitor_queue_handle = xQueueCreate(3, sizeof(http_server_queue_message_t));

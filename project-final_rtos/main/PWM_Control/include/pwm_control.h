@@ -5,6 +5,9 @@
 #include "esp_err.h"
 #include "esp_log.h"    
 
+
+
+
 /**
  * @brief Configuración genérica para PWM.
  *
@@ -42,6 +45,10 @@ typedef struct RGB_LED {
     PWM_Channel blue;          /**< Canal PWM para el LED azul. */
     PWM_Config config;         /**< Configuración compartida del PWM. */
 } RGB_LED;
+
+
+extern const PWM_Config servo_config;
+
 
 /**
  * @brief Inicializa un canal de PWM con la configuración dada.
@@ -120,7 +127,9 @@ typedef struct Servo {
     PWM_Config config;
 } Servo;
 
-void servo_init(const Servo *servo);
+extern const Servo mi_servo;
+
+void servo_init(void);
 
 /**
  * @brief Ajusta el ángulo de un servo motor.
@@ -134,5 +143,19 @@ void servo_init(const Servo *servo);
  * @param[in] angle Ángulo en grados (0-180).
  */
 void servo_set_angle(const Servo *servo, uint32_t angle);
+
+
+/* Servo mi_servo = {
+    .channel = { .gpio_num = 18, .channel = LEDC_CHANNEL_0 },
+    .config = {
+        .mode = LEDC_LOW_SPEED_MODE,
+        .timer = LEDC_TIMER_0,
+        .duty_res = LEDC_TIMER_12_BIT, // Resolución de 12 bits (0-4095)
+        .frequency = 50,                // Frecuencia de 50Hz (20ms período)
+        .invert = 0
+        }
+}; */
+
+void servo_angle(uint32_t value_angle);
 
 #endif // RGB_LED_H

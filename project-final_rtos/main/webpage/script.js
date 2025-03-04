@@ -519,60 +519,47 @@ function setTime(){
 
 //MARK: REGISTROS
 
-function send_register()
-{
-    // Assuming you have selectedNumber, hours, minutes variables populated from your form
-    selectedNumber = $("#selectNumber").val();
-    hours = $("#hours").val();
-    minutes = $("#minutes").val();
+function send_register() {
+    // Obtener valores del formulario
+    const selectedNumber = document.getElementById('selectNumber').value;
+    const hours = document.getElementById('hours').value;
+    const minutes = document.getElementById('minutes').value;
 
-    let max = document.getElementById('green-max').value;
+    // Mapear días de la semana (versión optimizada)
+    const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    const selectedDays = days.map(day => 
+        document.getElementById(`day_${day}`).checked ? "1" : "0"
+    );
 
-
-
-
-    
-    // Create an array for selected days
-    var selectedDays = [];
-    if ($("#day_mon").prop("checked")) selectedDays.push("1");
-	else selectedDays.push("0");
-    if ($("#day_tue").prop("checked")) selectedDays.push("1");
-	else selectedDays.push("0");
-    if ($("#day_wed").prop("checked")) selectedDays.push("1");
-	else selectedDays.push("0");
-    if ($("#day_thu").prop("checked")) selectedDays.push("1");
-	else selectedDays.push("0");
-    if ($("#day_fri").prop("checked")) selectedDays.push("1");
-	else selectedDays.push("0");
-    if ($("#day_sat").prop("checked")) selectedDays.push("1");
-	else selectedDays.push("0");
-    if ($("#day_sun").prop("checked")) selectedDays.push("1");
-	else selectedDays.push("0");
-
-    // Create an object to hold the data to be sent in the request body
-    var requestData = {
-        'selectedNumber': selectedNumber,
-        'hours': hours,
-        'minutes': minutes,
-        'selectedDays': selectedDays,
-        'timestamp': Date.now()
+    // Crear objeto de datos
+    const requestData = {
+        selectedNumber,
+        hours,
+        minutes,
+        selectedDays,
+        timestamp: Date.now()
     };
 
-    console.log(requestData);
+    console.log("Datos enviados:", requestData);
 
-    // Serialize the data object to JSON
-    //var requestDataJSON = JSON.stringify(requestData);
-
-    // Enviar los datos al servidor mediante una solicitud POST
+    // Configuración de fetch (corregido)
     fetch("/regchange.json", {
         method: "POST",
-        cache: false,
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+            "Content-Type": "application/json",
+            "Cache-Control": "no-cache" // Alternativa válida
+        },
         body: JSON.stringify(requestData)
     })
-    .then(response => response.text())
-    .then(data => alert(`Response: ${data}`))
-    .catch(error => console.error("Error:", error)); 
+    .then(response => {
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return response.text();
+    })
+    .then(data => alert(`Respuesta del servidor: ${data}`))
+    .catch(error => {
+        console.error("Error en la solicitud:", error);
+        alert(`Error: ${error.message}`);
+    });
 }
 
 /**
