@@ -3,6 +3,7 @@
 #include "uart_library.h"
 #include "wifi_library.h"
 #include "tasks_common.h"
+#include "pwm_control.h"
 
 #define HTTPD_MAX_URI_HANDLERS 16
 
@@ -282,38 +283,6 @@ esp_err_t http_server_OTA_status_handler(httpd_req_t *req)
 
 //--------------------------------------------------------------------------------------------------
 //--------------------------------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 //MARK: HANDLER VALUES ADC
@@ -714,29 +683,19 @@ esp_err_t set_time_handler(httpd_req_t *req) {
 
     
     const cJSON *min = cJSON_GetObjectItem(json, "min");
-    const cJSON *max = cJSON_GetObjectItem(json, "max");
 
-    if ( cJSON_IsNumber(min) && cJSON_IsNumber(max)) {
-        ESP_LOGI(TAG, "Received RGB settings Min: %.2f, Max: %.2f", min->valuedouble, max->valuedouble);
-    
-            int min_time = min->valuedouble;
-            int max_time = max->valuedouble;
+    if ( cJSON_IsNumber(min) ) {
+        ESP_LOGI(TAG, "Received RGB settings Min: %.2f", min->valuedouble);
+            uint32_t min_time = min->valuedouble;
+            servo_angle(min_time);
             char mensaje[50];
+            snprintf(mensaje, sizeof(mensaje), "VALUE_ANGLEconfigurado en %li\n", min_time);
+            sendData("ANGLE", mensaje);
+            // Aquí procesas los datos recibidos en `buf`
+            printf("Datos recibidos: %s\n", buf);
 
-        // Enviar el nuevo valor a la cola de MIN
-        if (xQueueSend(rgb_time_on_queue, &min_time, portMAX_DELAY) == pdTRUE) {
-            snprintf(mensaje, sizeof(mensaje), "MIN_TIME  configurado en %i segundos\n", min_time);
-            sendData("CMD_HANDLER", mensaje);
-        } else {
-            sendData("CMD_HANDLER", "Error al enviar MIN_TIME a la cola");
-        }
-        // Enviar el nuevo valor a la cola de MIN
-        if (xQueueSend(rgb_time_off_queue, &max_time, portMAX_DELAY) == pdTRUE) {
-            snprintf(mensaje, sizeof(mensaje), "MAX_TIME  configurado en %i segundos\n", max_time);
-            sendData("CMD_HANDLER", mensaje);
-        } else {
-            sendData("CMD_HANDLER", "Error al enviar MIN_TIME a la cola");
-        }
+            // Enviar respuesta al cliente
+            httpd_resp_send(req, "Datos recibidos correctamente", HTTPD_RESP_USE_STRLEN);
     }
 
 
@@ -1059,6 +1018,7 @@ esp_err_t index_handler(httpd_req_t *req) {
     extern const unsigned char index_html_start[] asm("_binary_index_html_start");
     extern const unsigned char index_html_end[] asm("_binary_index_html_end");
     const size_t index_html_size = (index_html_end - index_html_start);
+    httpd_resp_set_type(req, "text/html");
     httpd_resp_send(req, (const char *)index_html_start, index_html_size);
     return ESP_OK;
 }
@@ -1205,16 +1165,18 @@ void start_webserver(void) {
     httpd_config_t config = HTTPD_DEFAULT_CONFIG();
     httpd_handle_t server = NULL;
 
+
     config.max_uri_handlers = 20;
+
     // The core that the HTTP server will run on
-	config.core_id = HTTP_SERVER_TASK_CORE_ID;
+	  config.core_id = HTTP_SERVER_TASK_CORE_ID;
 
-	// Adjust the default priority to 1 less than the wifi application task
-	config.task_priority = HTTP_SERVER_TASK_PRIORITY;
+	  // Adjust the default priority to 1 less than the wifi application task
+	  config.task_priority = HTTP_SERVER_TASK_PRIORITY;
 
-	// Bump up the stack size (default is 4096)
-	config.stack_size = HTTP_SERVER_TASK_STACK_SIZE;
-
+	  // Bump up the stack size (default is 4096)
+	  config.stack_size = HTTP_SERVER_TASK_STACK_SIZE;
+  
     config.uri_match_fn = httpd_uri_match_wildcard;
 
     http_server_monitor_queue_handle = xQueueCreate(3, sizeof(http_server_queue_message_t));

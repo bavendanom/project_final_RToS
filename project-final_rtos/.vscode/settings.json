@@ -2,13 +2,17 @@
     "C_Cpp.intelliSenseEngine": "default",
     "idf.espIdfPathWin": "C:\\Users\\braya\\esp\\v5.4\\esp-idf",
     "idf.pythonInstallPath": "C:\\Users\\braya\\.espressif\\tools\\idf-python\\3.11.2\\python.exe",
+
     "idf.openOcdConfigs": [
         "board/esp32-wrover-kit-3.3v.cfg"
     ],
-    "idf.toolsPathWin": "C:\\Users\\braya\\.espressif",
-    "idf.portWin": "COM12",
+    "idf.toolsPathWin": "c:\\ESP_Programming\\.espressif",
+    "idf.portWin": "COM8",
     "idf.flashType": "UART",
     "idf.customExtraVars": {
+        "OPENOCD_SCRIPTS": "c:\\ESP_Programming\\.espressif\\tools\\openocd-esp32\\v0.12.0-esp32-20240318/openocd-esp32/share/openocd/scripts",
+        "IDF_CCACHE_ENABLE": "1",
+        "ESP_ROM_ELF_DIR": "c:\\ESP_Programming\\.espressif\\tools\\esp-rom-elfs\\20240305/",
         "IDF_TARGET": "esp32"
     }
 }
