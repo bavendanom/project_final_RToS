@@ -409,6 +409,8 @@ document.addEventListener('DOMContentLoaded', () => {
     new InternetClock();
 });
 
+//MARK:SERVO CONTROL
+
 document.addEventListener('DOMContentLoaded', () => {
     const slider = document.getElementById('servoSlider');
     const percentageInput = document.getElementById('percentageInput');
@@ -417,70 +419,116 @@ document.addEventListener('DOMContentLoaded', () => {
     const manualBtn = document.getElementById('manualMode');
     const autoBtn = document.getElementById('autoMode');
     let currentMode = 'manual';
+    let pendingValue = 0;
 
-    function mapPercentageToAngle(percentage) {
-        return Math.round((percentage / 100) * 180);
-    }
-
-    function updateServo(value) {
+    // Función solo para actualizar la visualización
+    function updateVisualization(value) {
         const percentage = Math.min(100, Math.max(0, value));
         const angle = (percentage / 100) * 90;
         
         document.querySelector('.shutter.left').style.transform = `rotateY(-${angle}deg)`;
         document.querySelector('.shutter.right').style.transform = `rotateY(${angle}deg)`;
         percentageDisplay.textContent = `${percentage}%`;
-        
-        if(currentMode === 'manual') {
-            const servoAngle = mapPercentageToAngle(percentage);
-            
-            fetch("/set_time", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ min: servoAngle })
-            })
-            .then(response => response.text())
-            .then(data => console.log(`Respuesta ESP: ${data}`))
-            .catch(error => console.error("Error:", error));
-        }
+        pendingValue = percentage; // Guardar el valor pendiente
     }
 
+    // Función para enviar la posición al servidor
+    function updateServo() {
+        if(currentMode !== 'manual') return;
+        
+        const servoAngle = Math.round((pendingValue / 100) * 180);
+        
+        fetch("/set_mode_manual", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ min: servoAngle })
+        })
+        .then(response => response.text())
+        .then(data => {
+            console.log(`Respuesta ESP: ${data}`);
+            setServoBtn.textContent = '✓ Aplicado!';
+            setTimeout(() => setServoBtn.textContent = 'Aplicar', 2000);
+        })
+        .catch(error => {
+            console.error("Error:", error);
+            setServoBtn.textContent = '✗ Error!';
+            setTimeout(() => setServoBtn.textContent = 'Aplicar', 2000);
+        });
+    }
+
+    // Event listeners
     slider.addEventListener('input', (e) => {
         const value = e.target.value;
         percentageInput.value = value;
-        updateServo(value);
+        updateVisualization(value);
     });
 
     percentageInput.addEventListener('input', (e) => {
         let value = Math.min(100, Math.max(0, e.target.value));
         slider.value = value;
-        updateServo(value);
+        updateVisualization(value);
     });
 
     setServoBtn.addEventListener('click', () => {
-        updateServo(percentageInput.value);
-        alert('Posición actualizada');
+        if(currentMode === 'manual') {
+            updateServo();
+        }
     });
 
+    // Handler de modos
     function setMode(mode) {
         currentMode = mode;
-        document.querySelector('.servo-control').classList.toggle('auto-mode', mode === 'auto');
-        manualBtn.classList.toggle('active', mode === 'manual');
-        autoBtn.classList.toggle('active', mode === 'auto');
+        const isManual = mode === 'manual';
         
-        fetch("/set_time", {
+        slider.disabled = !isManual;
+        percentageInput.disabled = !isManual;
+        setServoBtn.disabled = !isManual;
+        
+        document.querySelector('.servo-control').classList.toggle('auto-mode', !isManual);
+        manualBtn.classList.toggle('active', isManual);
+        autoBtn.classList.toggle('active', !isManual);
+    
+        if (!isManual) {
+            updateVisualization(0);
+            slider.value = 0;
+            percentageInput.value = 0;
+
+
+            // Enviar a la URI correspondiente
+            
+            fetch("/set_mode_auto", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ mode: 0 })
+            })
+            .then(response => response.text())
+            .then(data => console.log(`Modo cambiado: ${data}`))
+            .catch(error => console.error("Error:", error));
+
+
+            
+        }
+
+        
+    
+        /* // Enviar a la URI correspondiente
+        const url = mode === 'manual' ? '/set_mode_manual' : '/set_mode_auto';
+        fetch(url, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ mode: mode.toUpperCase() })
+            body: JSON.stringify({ mode: 1 })
         })
         .then(response => response.text())
         .then(data => console.log(`Modo cambiado: ${data}`))
-        .catch(error => console.error("Error:", error));
+        .catch(error => console.error("Error:", error));  */
     }
 
     manualBtn.addEventListener('click', () => setMode('manual'));
     autoBtn.addEventListener('click', () => setMode('auto'));
 
+    // Inicialización
     setMode('manual');
+    updateVisualization(0);
 });
 
 //MARK: REGISTROS

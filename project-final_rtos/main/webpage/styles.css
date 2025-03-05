@@ -15,7 +15,7 @@
 }
 
 body {
-    background: #f0f7ff;
+    background: #e2450c;
     color: var(--text-dark);
 }
 
@@ -26,7 +26,7 @@ body {
 
 .sidebar {
     width: 250px;
-    background: var(--pastel-purple);
+    background: var(--pastel-pink);
     padding: 1.5rem;
     box-shadow: 2px 0 10px rgba(0,0,0,0.1);
 }
@@ -478,6 +478,18 @@ body {
     margin: 8rem auto;
 }
 
+.servo-control.auto-mode .controls {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+#servoSlider:disabled,
+#percentageInput:disabled,
+#setServo:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
 .servo-control {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -549,14 +561,12 @@ body {
     font-family: 'Courier New', monospace;
 }
 
-.slider {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 15px;
-    border-radius: 10px;
-    background: #ddd;
-    outline: none;
+
+
+.slider:active::-webkit-slider-thumb {
+    transform: scale(1.2);
 }
+
 
 .slider::-webkit-slider-thumb {
     -webkit-appearance: none;
@@ -566,7 +576,19 @@ body {
     background: var(--pastel-purple);
     cursor: pointer;
     transition: background 0.3s;
+    transition: transform 0.2s ease;
 }
+
+.slider {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 15px;
+    border-radius: 10px;
+    background: #ddd;
+    outline: none;
+}
+
+
 
 .slider::-webkit-slider-thumb:hover {
     background: #b39ddb;
@@ -653,3 +675,33 @@ body {
 .delete-btn:hover {
     background: #ff9aa2;
 }
+
+/* Asegurar que los controles deshabilitados tengan el estilo correcto */
+.servo-control.auto-mode .controls *:not(.mode-btn) {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Mejorar el feedback visual del slider */
+.slider::-webkit-slider-thumb {
+    transition: transform 0.2s ease, background 0.3s;
+}
+
+.slider:active::-webkit-slider-thumb {
+    transform: scale(1.2) translateY(-1px);
+}
+
+/* Estilos para el botón deshabilitado */
+#setServo:disabled {
+    background: var(--pastel-blue) !important;
+    opacity: 0.5 !important;
+}
+
+/* Estado activo del botón de aplicar */
+#setServo:active {
+    transform: scale(0.95);
+}
+
+/* Estilos para controles deshabilitados */
+
+

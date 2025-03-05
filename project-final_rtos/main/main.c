@@ -22,7 +22,77 @@
 #include "wifi_library/include/wifi_library.h"
 #include "server_library/include/server_library.h"
 
+#define ADC_CHANNEL ADC_CHANNEL_4 
+#define ADC_UNIT ADC_UNIT_1
 
+
+
+adc_config_t adc1_config_ch4 = {
+    .channel = ADC_CHANNEL,
+    .attenuation = ADC_ATTEN_DB_12,
+    .cali_handle = NULL,
+    .do_calibration = false
+}; 
+
+
+static void config_adc_unit(adc_config_t *acd_ch, adc_unit_t adc_unit ){
+    config_unit init_adc_unit = init_adc(adc_unit);
+    init_adc_ch(acd_ch, init_adc_unit);
+}
+
+/* void automatic_window_task(void *arg){
+    int adc_value;
+
+    config_adc_unit(&adc1_config_ch4, ADC_UNIT);
+    while(1){
+        int state ;
+
+        if (xQueueReceive(set_mode_manual_auto, &state, pdMS_TO_TICKS(1000)) == pdPASS) {
+            char resp_str[64];
+            snprintf(resp_str, sizeof(resp_str), "{\"Temperature\": %i}", state);
+            sendData("Server:", resp_str);
+           
+            if (state == 0){
+                read_adc_raw(&adc1_config_ch4, &adc_value);
+                printf("ADC Value: %d\n", adc_value);
+                uint32_t value_angle = (adc_value * 180) / 4095;
+                servo_angle(value_angle);
+                printf("Servo Angle: %li\n", value_angle);
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+        
+} */
+
+void automatic_window_task(void *arg) {
+    int adc_value;
+    int state;
+
+    ESP_LOGI("automatic_window_task", "Task started");
+
+    config_adc_unit(&adc1_config_ch4, ADC_UNIT);
+
+    while (1) {
+        if (xQueueReceive(set_mode_manual_auto, &state, pdMS_TO_TICKS(1000)) == pdPASS) {
+            char resp_str[64];
+            snprintf(resp_str, sizeof(resp_str), "{\"Temperature\": %i}", state);
+            sendData("Server:", resp_str);
+
+            while (state == 0) {
+                read_adc_raw(&adc1_config_ch4, &adc_value);
+                ESP_LOGI("automatic_window_task", "ADC Value: %d", adc_value);
+                uint32_t value_angle = (adc_value * 180) / 4095;
+                servo_angle(value_angle);
+                ESP_LOGI("automatic_window_task", "Servo Angle: %li", value_angle);
+                if (xQueueReceive(set_mode_manual_auto, &state, pdMS_TO_TICKS(1000)) == pdPASS) {
+                    state = 1;
+                }
+            }
+        }
+        vTaskDelay(pdMS_TO_TICKS(500));
+    }
+}
 
 
 
@@ -56,6 +126,9 @@ void app_main(void)
     init_server();
     servo_init();
     //servo_init(&mi_servo);
+
+    xTaskCreate(automatic_window_task, "automatic_window_task", 2048*6, NULL,5, NULL);
+
     while(1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }

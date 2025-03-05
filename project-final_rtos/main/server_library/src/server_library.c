@@ -4,6 +4,7 @@
 #include "wifi_library.h"
 #include "tasks_common.h"
 #include "pwm_control.h"
+#include "ADC_library.h"
 
 #define HTTPD_MAX_URI_HANDLERS 16
 
@@ -36,6 +37,7 @@ QueueHandle_t rgb_crhomatic_circle_blue_queue;
 QueueHandle_t slider_crhomatic_circle_queue;
 QueueHandle_t rgb_time_on_queue;
 QueueHandle_t rgb_time_off_queue;
+QueueHandle_t set_mode_manual_auto;
 
 // Queue handle used to manipulate the main queue of events
 static QueueHandle_t http_server_monitor_queue_handle;
@@ -649,8 +651,8 @@ esp_err_t slider_crhomatic_circle_handler(httpd_req_t *req) {
 }
 
 
-//MARK: TIME ON OFF
-esp_err_t set_time_handler(httpd_req_t *req) {
+//MARK: SET MODE MANUAL
+esp_err_t set_mode_manual(httpd_req_t *req) {
     char buf[100];
     int ret, remaining = req->content_len;
 
@@ -683,27 +685,106 @@ esp_err_t set_time_handler(httpd_req_t *req) {
 
     
     const cJSON *min = cJSON_GetObjectItem(json, "min");
+    //const cJSON *state = cJSON_GetObjectItem(json, "state");
 
     if ( cJSON_IsNumber(min) ) {
         ESP_LOGI(TAG, "Received RGB settings Min: %.2f", min->valuedouble);
-            uint32_t min_time = min->valuedouble;
-            servo_angle(min_time);
-            char mensaje[50];
-            snprintf(mensaje, sizeof(mensaje), "VALUE_ANGLEconfigurado en %li\n", min_time);
-            sendData("ANGLE", mensaje);
-            // Aquí procesas los datos recibidos en `buf`
-            printf("Datos recibidos: %s\n", buf);
+        uint32_t min_time = min->valuedouble;
+        int state_ = 1;
 
-            // Enviar respuesta al cliente
-            httpd_resp_send(req, "Datos recibidos correctamente", HTTPD_RESP_USE_STRLEN);
+
+
+        if ( state_ == 1) {
+            
+            // Enviar el nuevo valor a la cola de MIN
+            if (xQueueSend(set_mode_manual_auto, &state_, portMAX_DELAY) == pdTRUE) {
+                char mensaje[50];
+                snprintf(mensaje, sizeof(mensaje), "VALUE_ANGLE configurado en %i°C\n", state_);
+                sendData("CMD_HANDLER", mensaje);
+            } else {
+                sendData("CMD_HANDLER", "Error al enviar MIN_RED a la cola");
+            }
+            servo_angle(min_time);
+        }
+        // Aquí procesas los datos recibidos en `buf`
+        printf("Datos recibidos: %s\n", buf);
+
+        // Enviar respuesta al cliente
+        httpd_resp_send(req, "Datos recibidos correctamente", HTTPD_RESP_USE_STRLEN);
     }
 
 
     cJSON_Delete(json);
-    httpd_resp_send(req, "RGB settings updated", HTTPD_RESP_USE_STRLEN);
+    httpd_resp_send(req, "mode manual ", HTTPD_RESP_USE_STRLEN);
     return ESP_OK;
     
 }
+
+//MARK: SET MODE AUTO
+esp_err_t set_mode_auto(httpd_req_t *req) {
+    char buf[100];
+    int ret, remaining = req->content_len;
+
+
+    if (remaining >= sizeof(buf)) {
+        ESP_LOGE(TAG, "Error: JSON demasiado grande");
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+
+    while (remaining > 0) {
+        if ((ret = httpd_req_recv(req, buf, MIN(remaining, sizeof(buf)))) <= 0) {
+            if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+                continue;
+            }
+            return ESP_FAIL;
+        }
+        remaining -= ret;
+    }
+
+    buf[req->content_len] = '\0';  // Asegurarse de que la cadena esté terminada en nulo
+
+    cJSON *json = cJSON_Parse(buf);
+    if (json == NULL) {
+        ESP_LOGE(TAG, "Error al parsear JSON");
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    
+    const cJSON *state = cJSON_GetObjectItem(json, "mode");
+
+    if ( cJSON_IsNumber(state) ) {
+        int state_ = state->valuedouble;
+        if ( state_== 0) {
+            
+            // Enviar el nuevo valor a la cola de MIN
+            if (xQueueSend(set_mode_manual_auto, &state_, portMAX_DELAY) == pdTRUE) {
+                char mensaje[50];
+                snprintf(mensaje, sizeof(mensaje), "VALUE_ANGLE configurado en %i°C\n", state_);
+                sendData("CMD_HANDLER", mensaje);
+            } else {
+                sendData("CMD_HANDLER", "Error al enviar MIN_RED a la cola");
+            }
+        }
+        // Aquí procesas los datos recibidos en `buf`
+        printf("Datos recibidos: %s\n", buf);
+
+        // Enviar respuesta al cliente
+        httpd_resp_send(req, "Datos recibidos correctamente", HTTPD_RESP_USE_STRLEN);
+
+         
+        set_manual_mode(0);
+        httpd_resp_send(req, "Modo auto cambiado", HTTPD_RESP_USE_STRLEN);  
+    }
+
+    cJSON_Delete(json);
+    httpd_resp_send(req, "mode auto", HTTPD_RESP_USE_STRLEN);
+    return ESP_OK;
+    
+}
+
 
 //MARK: REGISTROS ///////////////////////////
 /**
@@ -1110,13 +1191,19 @@ httpd_uri_t uri_slider_crhomatic_circle = {
 }; 
 
 //MARK: URI SET COLOR 
-httpd_uri_t uri_time_rgb = {
-    .uri = "/set_time",
+httpd_uri_t uri_set_mode_manual = {
+    .uri = "/set_mode_manual",
     .method = HTTP_POST,
-    .handler = set_time_handler,
+    .handler = set_mode_manual,
     .user_ctx = NULL
 };
 
+httpd_uri_t uri_set_mode_auto = {
+    .uri = "/set_mode_auto",
+    .method = HTTP_POST,
+    .handler = set_mode_auto,
+    .user_ctx = NULL
+};
 //--------------------------------------------------------------------------------------------------
 
 // register OTAupdate handler
@@ -1193,7 +1280,8 @@ void start_webserver(void) {
         httpd_register_uri_handler(server, &uri_connect_wifi);
         httpd_register_uri_handler(server, &uri_rgb_crhomatic_circle);
         httpd_register_uri_handler(server, &uri_slider_crhomatic_circle);
-        httpd_register_uri_handler(server, &uri_time_rgb);
+        httpd_register_uri_handler(server, &uri_set_mode_manual);
+        httpd_register_uri_handler(server, &uri_set_mode_auto);
         httpd_register_uri_handler(server, &OTA_update);
         httpd_register_uri_handler(server, &OTA_status);
         httpd_register_uri_handler(server, &register_change);
@@ -1254,4 +1342,5 @@ void comandos_init_server(void) {
     slider_crhomatic_circle_queue = xQueueCreate(5, sizeof(float));
     rgb_time_on_queue    = xQueueCreate(10, sizeof(int));
     rgb_time_off_queue    = xQueueCreate(10, sizeof(int));
+    set_mode_manual_auto    = xQueueCreate(10, sizeof(int));
 } 
