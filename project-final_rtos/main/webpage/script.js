@@ -1,5 +1,3 @@
-
-
 document.addEventListener('DOMContentLoaded', () => {
     // Elementos del DOM
     const menuItems = document.querySelectorAll('.menu-item');
@@ -12,7 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Estado de la aplicación
     let selectedFile = null;
-    let scheduleEntries = [];
 
     // Función para mostrar secciones
     const showSection = (sectionId) => {
@@ -79,140 +76,256 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Gestión de firmware
-let otaTimerVar = null;
-let seconds = null;
+    let otaTimerVar = null;
+    let seconds = null;
 
-// Modificar el event listener del input de archivo
-document.getElementById('firmwareFile').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    document.getElementById('fileName').textContent = file ? `${file.name} (${(file.size/1024).toFixed(1)} KB)` : 'Ningún archivo seleccionado';
-    document.getElementById('flashBtn').disabled = !file;
-});
-
-// Nueva función de actualización de firmware
-function handleFirmwareUpdate() {
-    const fileInput = document.getElementById('firmwareFile');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-        alert('Por favor selecciona un archivo .bin primero');
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/OTAupdate');
-    xhr.responseType = 'blob';
-
-    // Actualizar progreso
-    xhr.upload.addEventListener('progress', (e) => {
-        if (e.lengthComputable) {
-            const percent = (e.loaded / e.total) * 100;
-            document.getElementById('fwProgress').style.width = `${percent}%`;
-        }
+    document.getElementById('firmwareFile').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        document.getElementById('fileName').textContent = file ? `${file.name} (${(file.size/1024).toFixed(1)} KB)` : 'Ningún archivo seleccionado';
+        document.getElementById('flashBtn').disabled = !file;
     });
 
-    // Manejar respuesta
-    xhr.onload = () => {
-        if (xhr.status === 200) {
-            checkOTAStatus();
-        } else {
-            document.getElementById('fileName').textContent = 'Error en la subida del firmware';
-            document.getElementById('flashBtn').disabled = false;
+    function handleFirmwareUpdate() {
+        const fileInput = document.getElementById('firmwareFile');
+        const file = fileInput.files[0];
+        
+        if (!file) {
+            alert('Por favor selecciona un archivo .bin primero');
+            return;
         }
-    };
 
-    xhr.onerror = () => {
-        document.getElementById('fileName').textContent = 'Error de conexión';
-        document.getElementById('flashBtn').disabled = false;
-    };
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/OTAupdate');
+        xhr.responseType = 'blob';
 
-    document.getElementById('flashBtn').disabled = true;
-    document.getElementById('fileName').textContent = `Subiendo ${file.name}...`;
-    xhr.send(formData);
-}
-
-// Función para verificar estado OTA
-function checkOTAStatus() {
-    const xhr = new XMLHttpRequest();
-    xhr.open('POST', '/OTAstatus');
-    xhr.onload = () => {
-        if (xhr.status === 200) {
-            const response = JSON.parse(xhr.responseText);
-            
-            if (response.ota_update_status === 1) {
-                seconds = 10;
-                startRebootTimer();
-            } else if (response.ota_update_status === -1) {
-                document.getElementById('fileName').textContent = 'Error en el firmware (verifica el archivo .bin)';
+        xhr.upload.addEventListener('progress', (e) => {
+            if (e.lengthComputable) {
+                const percent = (e.loaded / e.total) * 100;
+                document.getElementById('fwProgress').style.width = `${percent}%`;
             }
-        }
-    };
-    xhr.send();
-}
+        });
 
-// Temporizador de reinicio
-function startRebootTimer() {
-    document.getElementById('fileName').textContent = `Actualización exitosa! Reiniciando en ${seconds} segundos...`;
-    
-    if (--seconds <= 0) {
-        clearTimeout(otaTimerVar);
-        window.location.href = '/';
-    } else {
-        otaTimerVar = setTimeout(startRebootTimer, 1000);
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                checkOTAStatus();
+            } else {
+                document.getElementById('fileName').textContent = 'Error en la subida del firmware';
+                document.getElementById('flashBtn').disabled = false;
+            }
+        };
+
+        xhr.onerror = () => {
+            document.getElementById('fileName').textContent = 'Error de conexión';
+            document.getElementById('flashBtn').disabled = false;
+        };
+
+        document.getElementById('flashBtn').disabled = true;
+        document.getElementById('fileName').textContent = `Subiendo ${file.name}...`;
+        xhr.send(formData);
     }
-}
 
-// Actualizar el event listener del botón Flash
-document.getElementById('flashBtn').addEventListener('click', handleFirmwareUpdate);
+    function checkOTAStatus() {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', '/OTAstatus');
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                const response = JSON.parse(xhr.responseText);
+                
+                if (response.ota_update_status === 1) {
+                    seconds = 10;
+                    startRebootTimer();
+                } else if (response.ota_update_status === -1) {
+                    document.getElementById('fileName').textContent = 'Error en el firmware (verifica el archivo .bin)';
+                }
+            }
+        };
+        xhr.send();
+    }
 
-    // Programación de registros
-    document.getElementById('addSchedule').addEventListener('click', (e) => {
-        e.preventDefault();
+    function startRebootTimer() {
+        document.getElementById('fileName').textContent = `Actualización exitosa! Reiniciando en ${seconds} segundos...`;
         
-        const dateTime = document.getElementById('scheduleTime').value;
-        const days = Array.from(document.querySelectorAll('input[name="days"]:checked'))
-                         .map(checkbox => checkbox.value);
-        
-        if (!dateTime || scheduleEntries.length >= 10) return;
-        
-        scheduleEntries.push({
-            id: Date.now(),
-            date: new Date(dateTime).toLocaleString(),
-            days: days.length > 0 ? days.join(', ') : 'Una vez'
-        });
-        
-        updateScheduleList();
-        document.getElementById('scheduleTime').value = '';
-        document.querySelectorAll('input[name="days"]:checked').forEach(cb => cb.checked = false);
-    });
+        if (--seconds <= 0) {
+            clearTimeout(otaTimerVar);
+            window.location.href = '/';
+        } else {
+            otaTimerVar = setTimeout(startRebootTimer, 1000);
+        }
+    }
 
-    const updateScheduleList = () => {
-        const entriesList = document.getElementById('scheduleEntries');
-        entriesList.innerHTML = scheduleEntries.map(entry => `
-            <div class="schedule-entry">
-                <div class="entry-info">
-                    <div class="entry-date">${entry.date}</div>
-                    <div class="entry-days">${entry.days}</div>
-                </div>
-                <button class="btn delete-btn" data-id="${entry.id}">🗑️</button>
-            </div>
-        `).join('');
-        
-        document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const id = parseInt(btn.dataset.id);
-                scheduleEntries = scheduleEntries.filter(entry => entry.id !== id);
-                updateScheduleList();
-            });
-        });
-    };
+    document.getElementById('flashBtn').addEventListener('click', handleFirmwareUpdate);
 
     // Inicialización
     showSection('network');
     document.querySelector('.menu-item[data-section="network"]').classList.add('active');
+});
+
+class ScheduleManager {
+    constructor() {
+        this.scheduleEntries = [];
+        this.registroCounter = 1;
+        this.init();
+        this.daysOrder = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
+        this.loadRegisters();
+    }
+
+    init() {
+        this.bindEvents();
+        this.updateScheduleList();
+    }
+
+    bindEvents() {
+        document.getElementById('addSchedule')?.addEventListener('click', (e) => this.addSchedule(e));
+    }
+
+    async addSchedule(e) {
+        e.preventDefault();
+        
+        const dateTime = document.getElementById('scheduleTime').value;
+        const angle = document.getElementById('angleInput').value;
+        
+        if (!dateTime) return;
+        
+        const date = new Date(dateTime);
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        
+        const selectedDays = this.daysOrder.map(day => 
+            document.querySelector(`input[name="days"][value="${day}"]`).checked ? "1" : "0"
+        );
+
+        const numeroRegistro = this.findAvailableRegistroNumber();
+        if (numeroRegistro === null) {
+            alert("No se pueden agregar más de 10 registros.");
+            return;
+        }
+
+        try {
+            await this.sendRegister(numeroRegistro, hours, minutes, selectedDays, angle);
+            
+            this.scheduleEntries.push({
+                id: Date.now(),
+                numeroRegistro: numeroRegistro,
+                date: date.toLocaleString('es-ES'),
+                days: selectedDays.includes("1") ? this.getSelectedDaysLabels(selectedDays) : 'Una vez',
+                angle: angle
+            });
+            
+            this.updateScheduleList();
+            this.resetForm();
+            this.loadRegisters();
+        } catch (error) {
+            console.error('Error al guardar registro:', error);
+            alert('Error al guardar el registro en el dispositivo');
+        }
+    }
+
+    async sendRegister(regNumber, hours, minutes, days, angle) {
+        const requestData = {
+            selectedNumber: regNumber.toString(),
+            hours: hours,
+            minutes: minutes,
+            selectedDays: days,
+            angle: angle
+        };
+
+        const response = await fetch('/regchange.json', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+
+        if (!response.ok) throw new Error('Error en la respuesta del servidor');
+    }
+
+    getSelectedDaysLabels(daysArray) {
+        return daysArray
+            .map((val, index) => val === "1" ? this.daysOrder[index] : null)
+            .filter(val => val !== null)
+            .join(', ');
+    }
+
+    async loadRegisters() {
+        try {
+            const response = await fetch('/read_regs.json');
+            const data = await response.json();
+            
+            for (let i = 1; i <= 10; i++) {
+                const regValue = data[`reg${i}`];
+                document.getElementById(`reg_${i}`).textContent = regValue || 'Vacío';
+            }
+        } catch (error) {
+            console.error('Error cargando registros:', error);
+        }
+    }
+
+    async deleteSchedule(id) {
+        const entry = this.scheduleEntries.find(e => e.id === parseInt(id));
+        if (!entry) return;
+
+        try {
+            await this.eraseRegister(entry.numeroRegistro);
+            this.scheduleEntries = this.scheduleEntries.filter(e => e.id !== parseInt(id));
+            this.updateScheduleList();
+            this.loadRegisters();
+        } catch (error) {
+            console.error('Error eliminando registro:', error);
+            alert('Error al eliminar el registro del dispositivo');
+        }
+    }
+
+    async eraseRegister(regNumber) {
+        const response = await fetch('/regerase.json', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ selectedNumber: regNumber.toString() })
+        });
+
+        if (!response.ok) throw new Error('Error en la respuesta del servidor');
+    }
+
+    findAvailableRegistroNumber() {
+        const usedNumbers = this.scheduleEntries.map(entry => entry.numeroRegistro);
+        for (let i = 1; i <= 10; i++) {
+            if (!usedNumbers.includes(i)) return i;
+        }
+        return null;
+    }
+
+    updateScheduleList() {
+        const entriesList = document.getElementById('scheduleEntries');
+        if (!entriesList) return;
+
+        entriesList.innerHTML = this.scheduleEntries.map(entry => `
+            <div class="schedule-entry">
+                <div class="entry-info">
+                    <div class="entry-number">Registro #${entry.numeroRegistro}</div>
+                    <div class="entry-date">${entry.date}</div>
+                    <div class="entry-days">${entry.days}</div>
+                    <div class="entry-angle">Ángulo: ${entry.angle}°</div>
+                </div>
+                <button class="btn delete-btn" data-id="${entry.id}">🗑️</button>
+            </div>
+        `).join('');
+
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+            btn.addEventListener('click', () => this.deleteSchedule(btn.dataset.id));
+        });
+    }
+
+    resetForm() {
+        document.getElementById('scheduleTime').value = '';
+        document.querySelectorAll('input[name="days"]:checked').forEach(cb => cb.checked = false);
+        document.getElementById('angleInput').value = 0;
+    }
+}
+
+// Inicialización del ScheduleManager
+document.addEventListener('DOMContentLoaded', () => {
+    new ScheduleManager();
 });
 
 class InternetClock {
@@ -292,7 +405,6 @@ class InternetClock {
     }
 }
 
-// Inicializar al cargar
 document.addEventListener('DOMContentLoaded', () => {
     new InternetClock();
 });
@@ -306,7 +418,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const autoBtn = document.getElementById('autoMode');
     let currentMode = 'manual';
 
-    // Función para mapear 0-100% a 0-180 grados
     function mapPercentageToAngle(percentage) {
         return Math.round((percentage / 100) * 180);
     }
@@ -315,12 +426,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const percentage = Math.min(100, Math.max(0, value));
         const angle = (percentage / 100) * 90;
         
-        // Actualizar visualización
         document.querySelector('.shutter.left').style.transform = `rotateY(-${angle}deg)`;
         document.querySelector('.shutter.right').style.transform = `rotateY(${angle}deg)`;
         percentageDisplay.textContent = `${percentage}%`;
         
-        // Enviar comando al ESP (mapeado a 0-180)
         if(currentMode === 'manual') {
             const servoAngle = mapPercentageToAngle(percentage);
             
@@ -335,7 +444,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Event listeners
     slider.addEventListener('input', (e) => {
         const value = e.target.value;
         percentageInput.value = value;
@@ -353,14 +461,12 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Posición actualizada');
     });
 
-    // Handler de modos
     function setMode(mode) {
         currentMode = mode;
         document.querySelector('.servo-control').classList.toggle('auto-mode', mode === 'auto');
         manualBtn.classList.toggle('active', mode === 'manual');
         autoBtn.classList.toggle('active', mode === 'auto');
         
-        // Enviar modo al ESP
         fetch("/set_time", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -369,16 +475,13 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(response => response.text())
         .then(data => console.log(`Modo cambiado: ${data}`))
         .catch(error => console.error("Error:", error));
-    } 
-  // Event listeners para modos
+    }
+
     manualBtn.addEventListener('click', () => setMode('manual'));
     autoBtn.addEventListener('click', () => setMode('auto'));
 
-    // Inicialización
     setMode('manual');
 });
-
- 
 
 //MARK: REGISTROS
 
@@ -387,6 +490,7 @@ function send_register() {
     const selectedNumber = document.getElementById('selectNumber').value;
     const hours = document.getElementById('hours').value;
     const minutes = document.getElementById('minutes').value;
+    const angle = document.getElementById('angleInput').value;
 
     // Mapear días de la semana (versión optimizada)
     const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
@@ -400,6 +504,7 @@ function send_register() {
         hours,
         minutes,
         selectedDays,
+        angle,
         timestamp: Date.now()
     };
 

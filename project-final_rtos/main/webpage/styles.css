@@ -611,3 +611,45 @@ body {
     font-size: 1rem;
     color: var(--pastel-green);
 }
+
+.entry-angle {
+    font-size: 0.9em;
+    color: #666;
+    margin-top: 0.5rem;
+}
+
+.entry-number {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: var(--pastel-purple);
+    margin-bottom: 0.5rem;
+}
+
+.entry-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.edit-btn, .delete-btn {
+    padding: 0.5rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.edit-btn {
+    background: var(--pastel-blue);
+}
+
+.edit-btn:hover {
+    background: #8fb3d9;
+}
+
+.delete-btn {
+    background: var(--pastel-pink);
+}
+
+.delete-btn:hover {
+    background: #ff9aa2;
+}
