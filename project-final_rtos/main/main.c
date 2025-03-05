@@ -40,31 +40,6 @@ static void config_adc_unit(adc_config_t *acd_ch, adc_unit_t adc_unit ){
     init_adc_ch(acd_ch, init_adc_unit);
 }
 
-/* void automatic_window_task(void *arg){
-    int adc_value;
-
-    config_adc_unit(&adc1_config_ch4, ADC_UNIT);
-    while(1){
-        int state ;
-
-        if (xQueueReceive(set_mode_manual_auto, &state, pdMS_TO_TICKS(1000)) == pdPASS) {
-            char resp_str[64];
-            snprintf(resp_str, sizeof(resp_str), "{\"Temperature\": %i}", state);
-            sendData("Server:", resp_str);
-           
-            if (state == 0){
-                read_adc_raw(&adc1_config_ch4, &adc_value);
-                printf("ADC Value: %d\n", adc_value);
-                uint32_t value_angle = (adc_value * 180) / 4095;
-                servo_angle(value_angle);
-                printf("Servo Angle: %li\n", value_angle);
-            }
-        }
-        vTaskDelay(pdMS_TO_TICKS(500));
-    }
-        
-} */
-
 void automatic_window_task(void *arg) {
     int adc_value;
     int state;
