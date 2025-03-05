@@ -147,4 +147,31 @@ void example_adc_calibration_deinit(adc_cali_handle_t handle)
     ESP_ERROR_CHECK(adc_cali_delete_scheme_line_fitting(handle));
 #endif
 }
+static int manual_mode = 0;
 
+// Mutex para proteger manual_mode
+static SemaphoreHandle_t mode_mutex = NULL;
+
+void init_control_mode() {
+    mode_mutex = xSemaphoreCreateMutex();
+    if (mode_mutex == NULL) {
+        printf("Error al crear el mutex del modo\n");
+    }
+}
+
+void set_manual_mode(int mode) {
+    if (mode_mutex != NULL && xSemaphoreTake(mode_mutex, portMAX_DELAY)) {
+        manual_mode = mode;
+        printf(">>> Modo cambiado a: %s <<<\n", manual_mode ? "MANUAL" : "AUTOMÁTICO");
+        xSemaphoreGive(mode_mutex);
+    }
+}
+
+int get_manual_mode() {
+    int mode = 0;
+    if (mode_mutex != NULL && xSemaphoreTake(mode_mutex, portMAX_DELAY)) {
+        mode = manual_mode;
+        xSemaphoreGive(mode_mutex);
+    }
+    return mode;
+}

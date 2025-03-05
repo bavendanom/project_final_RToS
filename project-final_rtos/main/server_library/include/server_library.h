@@ -39,6 +39,7 @@ extern QueueHandle_t rgb_crhomatic_circle_blue_queue;
 extern QueueHandle_t slider_crhomatic_circle_queue; 
 extern QueueHandle_t rgb_time_on_queue;
 extern QueueHandle_t rgb_time_off_queue;
+extern QueueHandle_t set_mode_manual_auto;
 
 void start_webserver(void);
 
