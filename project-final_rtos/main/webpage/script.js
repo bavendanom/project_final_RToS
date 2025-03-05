@@ -85,6 +85,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('flashBtn').disabled = !file;
     });
 
+//MARK: Handle Firmeware 
     function handleFirmwareUpdate() {
         const fileInput = document.getElementById('firmwareFile');
         const file = fileInput.files[0];
@@ -93,21 +94,37 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Por favor selecciona un archivo .bin primero');
             return;
         }
-
+    
         const formData = new FormData();
         formData.append('file', file);
         
         const xhr = new XMLHttpRequest();
         xhr.open('POST', '/OTAupdate');
         xhr.responseType = 'blob';
-
+    
+        // Variables para el cálculo de tiempo
+        let uploadStartTime = Date.now();
+        let previousLoaded = 0;
+    
         xhr.upload.addEventListener('progress', (e) => {
             if (e.lengthComputable) {
                 const percent = (e.loaded / e.total) * 100;
                 document.getElementById('fwProgress').style.width = `${percent}%`;
+                document.getElementById('progressText').textContent = `${Math.round(percent)}%`;
+                
+                // Calcular tiempo restante
+                const currentTime = Date.now();
+                const elapsed = (currentTime - uploadStartTime) / 1000; // segundos
+                const speed = e.loaded / elapsed; // bytes/segundo
+                const remaining = (e.total - e.loaded) / speed;
+                
+                document.getElementById('fileName').innerHTML = `
+                    Subiendo ${file.name}...<br>
+                    <small>Tiempo restante: ${Math.ceil(remaining)} segundos</small>
+                `;
             }
         });
-
+    
         xhr.onload = () => {
             if (xhr.status === 200) {
                 checkOTAStatus();
@@ -115,15 +132,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('fileName').textContent = 'Error en la subida del firmware';
                 document.getElementById('flashBtn').disabled = false;
             }
+            // Resetear el formulario después de la carga
+            fileInput.value = '';
+            document.getElementById('fileName').textContent = 'Ningún archivo seleccionado';
         };
-
+    
         xhr.onerror = () => {
-            document.getElementById('fileName').textContent = 'Error de conexión';
+            document.getElementById('fileName').innerHTML = `
+        <span class="error">Error de conexión</span>
+        <small>Intente nuevamente</small>`;
             document.getElementById('flashBtn').disabled = false;
         };
-
+    
         document.getElementById('flashBtn').disabled = true;
-        document.getElementById('fileName').textContent = `Subiendo ${file.name}...`;
         xhr.send(formData);
     }
 
@@ -135,27 +156,48 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = JSON.parse(xhr.responseText);
                 
                 if (response.ota_update_status === 1) {
-                    seconds = 10;
+                    seconds = 15;  // Aumentamos el tiempo para dar margen al reinicio
                     startRebootTimer();
+                    
                 } else if (response.ota_update_status === -1) {
-                    document.getElementById('fileName').textContent = 'Error en el firmware (verifica el archivo .bin)';
+                    document.getElementById('fileName').textContent = 'Error en el firmware';
                 }
+            } else {
+                // Si hay error de conexión (servidor reiniciando), forzar recarga
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 5000);
             }
         };
+        
+        xhr.onerror = () => {
+            // Si falla la conexión, intentar recargar después de 5 seg
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 5000);
+        };
+        
         xhr.send();
     }
 
     function startRebootTimer() {
-        document.getElementById('fileName').textContent = `Actualización exitosa! Reiniciando en ${seconds} segundos...`;
+        const countdownElement = document.getElementById('fileName');
         
-        if (--seconds <= 0) {
-            clearTimeout(otaTimerVar);
-            window.location.href = '/';
-        } else {
-            otaTimerVar = setTimeout(startRebootTimer, 1000);
-        }
+        const updateTimer = () => {
+            countdownElement.innerHTML = `
+                Actualización exitosa!<br>
+                <small>Reiniciando en ${seconds} segundos... (Recargue si se demora)</small>
+            `;
+            
+            if (percent == 0) {
+                clearInterval(otaTimerVar);
+                window.location.href = window.location.href; // Forzar recarga completa
+            }
+        };
+        
+        updateTimer(); // Actualización inmediata
+        otaTimerVar = setInterval(updateTimer, 1000);
     }
-
     document.getElementById('flashBtn').addEventListener('click', handleFirmwareUpdate);
 
     // Inicialización
@@ -163,6 +205,8 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelector('.menu-item[data-section="network"]').classList.add('active');
 });
 
+
+//MARK: SCHEDULE MANAGER
 class ScheduleManager {
     constructor() {
         this.scheduleEntries = [];
@@ -170,15 +214,24 @@ class ScheduleManager {
         this.init();
         this.daysOrder = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
         this.loadRegisters();
+        this.registerElements = {};
+        this.registerElements = Array.from({length: 10}, (_, i) => 
+            document.getElementById(`reg_${i + 1}`));
+        this.loadButton = document.getElementById('loadRegistersButton');
+        if (this.loadButton) {
+            this.loadButton.addEventListener('click', () => this.loadRegisters());
+        }
     }
 
     init() {
         this.bindEvents();
         this.updateScheduleList();
+        this.loadButton?.addEventListener('click', () => this.loadRegisters());
     }
 
     bindEvents() {
         document.getElementById('addSchedule')?.addEventListener('click', (e) => this.addSchedule(e));
+        
     }
 
     async addSchedule(e) {
@@ -250,16 +303,47 @@ class ScheduleManager {
 
     async loadRegisters() {
         try {
-            const response = await fetch('/read_regs.json');
+            const response = await fetch('/read_regs.json', {
+                method: 'GET'  // Ahora usa GET
+            });
+            
+            if (!response.ok) throw new Error('Error en la respuesta');
+            
             const data = await response.json();
             
-            for (let i = 1; i <= 10; i++) {
-                const regValue = data[`reg${i}`];
-                document.getElementById(`reg_${i}`).textContent = regValue || 'Vacío';
-            }
+            this.registerElements.forEach((element, index) => {
+                const regNumber = index + 1;
+                const regValue = data[`reg${regNumber}`] || 'Vacío';
+                element.textContent = regValue;
+                element.classList.toggle('active-register', regValue !== 'Vacío');
+            });
+            
         } catch (error) {
             console.error('Error cargando registros:', error);
+            alert('Error al cargar registros');
         }
+    }
+
+    init() {
+        this.bindEvents();
+        this.updateScheduleList();
+        this.createRegisterDisplay(); // Nueva función
+    }
+
+    createRegisterDisplay() {
+        const container = document.getElementById('currentRegisters');
+        
+        this.registerElements = Array.from({length: 10}, (_, i) => {
+            const regNumber = i + 1;
+            const regElement = document.createElement('div');
+            regElement.className = 'register-item';
+            regElement.innerHTML = `
+                <span class="reg-number">Registro ${regNumber}</span>
+                <span class="reg-value" id="reg_${regNumber}">Cargando...</span>
+            `;
+            container.appendChild(regElement);
+            return document.getElementById(`reg_${regNumber}`);
+        });
     }
 
     async deleteSchedule(id) {
@@ -328,6 +412,7 @@ document.addEventListener('DOMContentLoaded', () => {
     new ScheduleManager();
 });
 
+//MARK: INTERNET CLOCK
 class InternetClock {
     constructor() {
         this.clockElement = document.querySelector('.internet-clock');

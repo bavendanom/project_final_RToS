@@ -19,22 +19,22 @@
             <nav class="menu">
                 <button class="menu-item active" data-section="network">
                     <span class="emoji">🌐</span>
-                    <span>Configurar Red</span>
+                    <span>Network Config.</span>
                     <span class="emoji">🌐</span>
                 </button>
                 <button class="menu-item" data-section="firmware">
                     <span class="emoji">🔄</span>
-                    <span>Actualizar Firmware</span>
+                    <span>Update Firmware</span>
                     <span class="emoji">💾</span>
                 </button>
                 <button class="menu-item" data-section="scheduling">
                     <span class="emoji">⏱️</span>
-                    <span>Programación</span>
+                    <span>Schedule</span>
                     <span class="emoji">📅</span>
                 </button>
                 <button class="menu-item" data-section="control">
                     <span class="emoji">🎛️</span>
-                    <span>Control Ventana</span>
+                    <span>Servo Control</span>
                     <span class="emoji">🪟</span>
                 </button>
             </nav>
@@ -45,7 +45,7 @@
         <main class="main-content">
             <!-- Sección de Login -->
             <section class="content-card network-section hidden">
-                <h2>Configuración de Red</h2>
+                <h2>Set a Network</h2>
                 <form id="networkForm">
                     <div class="form-group">
                         <label>Network SSID:</label>
@@ -55,7 +55,7 @@
                     <div class="form-group password-container">
                         <label>Password:</label>
                         <div class="input-wrapper">
-                            <input type="password" id="networkPassword" placeholder="••••••••" required>
+                            <input type="password" id="networkPassword" placeholder="Password" required>
                             <button type="button" class="toggle-password">
                                 <svg class="eye-icon" viewBox="0 0 24 24">
                                     <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
@@ -71,16 +71,19 @@
             <!-- Sección de Firmware -->
             <!-- Sección Firmware Actualizado -->
             <section class="content-card firmware-section hidden ">
-                <h2>Actualización de Firmware</h2>
+                <h2>Firmware Actualization</h2>
                 <div class="firmware-upload">
                     <input type="file" id="firmwareFile" accept=".bin,.hex" hidden>
                     <button class="btn upload-btn" onclick="document.getElementById('firmwareFile').click()">
-                        📁 Seleccionar Archivo
+                        📁 Select File
                     </button>
-                    <span id="fileName" class="file-name">Ningún archivo seleccionado</span>
+                    <span id="fileName" class="file-name">Non File Selected</span>
                     <div class="upload-progress">
-                        <div class="progress-bar">
-                            <div class="progress" id="fwProgress"></div>
+                        <div class="progress-container"> 
+                            <div class="progress-bar">
+                                <div class="progress" id="fwProgress"></div>
+                            </div>
+                            <span class="progress-text" id="progressText">0%</span>
                         </div>
                         <button class="btn update-btn" id="flashBtn" disabled>Flash Firmware</button>
                     </div>
@@ -89,15 +92,15 @@
 
 <!-- Sección Programación -->
         <section class="content-card scheduling-section hidden ">
-            <h2>Programación de Registros</h2>
+            <h2>Schedule Programation</h2>
             <div class="scheduling-container">
                 <div class="schedule-form">
             <div class="form-group">
-                <label>Fecha y Hora:</label>
+                <label>Date and Time:</label>
                 <input type="datetime-local" id="scheduleTime" required>
             </div>
             <div class="form-group">
-                <label>Repetir días:</label>
+                <label>Repeat Days:</label>
                 <div class="days-grid">
                     <label><input type="checkbox" name="days" value="Lun"> Lun</label>
                     <label><input type="checkbox" name="days" value="Mar"> Mar</label>
@@ -109,10 +112,10 @@
                 </div>
             </div>
             <div class="form-group">
-                <label>Ángulo:</label>
+                <label>Open in percent:</label>
                 <input type="number" id="angleInput" min="0" max="180" value="0" required>
             </div>
-            <button class="btn primary" id="addSchedule">➕ Asignar Registro</button>
+            <button class="btn primary" id="addSchedule">➕ Assign Schedule</button>
 
             <div class="internet-clock">
                 <div class="clock-loader"></div>
@@ -125,10 +128,10 @@
                             <span class="seconds">--</span>
                         </span>
                     </div>
-                    <div class="date-display">Cargando fecha...</div>
+                    <div class="date-display">Charging Date...</div>
                         <div class="timezone-display">
-                        <span class="sync-status">🔄 Sincronizando...</span>
-                        <button class="btn sync-btn">Actualizar</button>
+                        <span class="sync-status">🔄 Syncronizing...</span>
+                        <button class="btn sync-btn">Update</button>
                         </div>
                     </div>
                 </div>
@@ -136,19 +139,25 @@
         
         
             <div class="schedule-log">
-                <h3>Registros Programados (Máx. 10)</h3>
+                <h3>Programmed Schedules (Máx. 10)</h3>
+                <button class="btn" id="loadRegistersButton">🔄 Read Registers</button>
                 <div class="entries-list" id="scheduleEntries"></div>
             
             
+                </div>
+
+                <div class="current-registers">
+                    <h3>Current Schedules</h3>
+                    <div class="registers-grid" id="currentRegisters"></div>
                 </div>
             </div>
         </section>
 
         <section class="content-card control-section hidden">
-            <h2>Control de Apertura de Ventana</h2>
+            <h2>Window Opening Controller</h2>
             <div class="mode-selector">
                 <button class="btn mode-btn active" id="manualMode">Manual</button>
-                <button class="btn mode-btn" id="autoMode">Automático</button>
+                <button class="btn mode-btn" id="autoMode">Automatic</button>
             </div>
             <div class="servo-control">
                 <div class="window-visualization">
@@ -160,11 +169,11 @@
                 
                 <div class="controls">
                     <div class="form-group">
-                        <label>Porcentaje de apertura:</label>
+                        <label>Opening percentage:</label>
                         <input type="number" id="percentageInput" min="0" max="100" value="0">
                         <input type="range" id="servoSlider" min="0" max="100" value="0" class="slider">
                     </div>
-                    <button class="btn primary" id="setServo">Aplicar</button>
+                    <button class="btn primary" id="setServo">Apply</button>
                 </div>
             </div>
 

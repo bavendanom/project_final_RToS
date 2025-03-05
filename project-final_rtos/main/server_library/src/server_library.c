@@ -1090,7 +1090,41 @@ esp_err_t set_mode_auto(httpd_req_t *req) {
  
      return ESP_OK;
  }
+
  
+ 
+ static esp_err_t http_server_read_register_handler(httpd_req_t *req) {
+    ESP_LOGI(TAG, "/read_regs.json requested");
+    
+    cJSON *root = cJSON_CreateObject();
+    char register_data[12] = {0};
+    char key[10];
+
+    for (int i = 1; i <= 10; i++) {
+        snprintf(key, sizeof(key), "reg%d", i); // Formatea la clave
+        
+        if (read_reg_data(register_data, i) == ESP_OK) {
+            // Ejemplo de formateo: "13:45 LMMJVSD"
+            char reg_value[20] = {0};
+            snprintf(reg_value, sizeof(reg_value), "%.2s:%.2s %.7s",
+                   register_data,       // HH:MM
+                   register_data + 2,   // Días
+                   register_data + 9);  // Ángulo (si aplica)
+            
+            cJSON_AddStringToObject(root, key, reg_value);
+        } else {
+            cJSON_AddStringToObject(root, key, "Vacío");
+        }
+    }
+
+    const char *json_str = cJSON_Print(root);
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, json_str, strlen(json_str));
+    
+    cJSON_Delete(root);
+    free((void*)json_str);
+    return ESP_OK;
+}
  
 
 
@@ -1243,6 +1277,14 @@ httpd_uri_t register_erase = {
     .user_ctx = NULL
 };
 
+httpd_uri_t read_range_uri = {
+    .uri = "/read_regs.json",
+    .method = HTTP_GET,  // Cambiado de POST a GET
+    .handler = http_server_read_register_handler,
+    .user_ctx = NULL
+};
+
+
 
 
 
@@ -1286,6 +1328,7 @@ void start_webserver(void) {
         httpd_register_uri_handler(server, &OTA_status);
         httpd_register_uri_handler(server, &register_change);
         httpd_register_uri_handler(server, &register_erase);
+        httpd_register_uri_handler(server, &read_range_uri );
 
         // Registrar los nuevos manejadores
         httpd_uri_t uri_index = {
