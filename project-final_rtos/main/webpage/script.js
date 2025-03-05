@@ -396,17 +396,19 @@ function send_register() {
 
     // Crear objeto de datos
     const requestData = {
-        selectedNumber,
-        hours,
-        minutes,
-        selectedDays,
-        timestamp: Date.now()
+        'selectedNumber': selectedNumber,
+        'hours': hours,
+        'minutes': minutes,
+        'selectedDays': selectedDays,
+        'timestamp': Date.now()
     };
 
     console.log("Datos enviados:", requestData);
 
+    
+
     // Configuración de fetch (corregido)
-    fetch("/regchange.json", {
+    fetch("/regchange", {
         method: "POST",
         headers: { 
             "Content-Type": "application/json",
@@ -430,21 +432,30 @@ function send_register() {
  */
 function read_reg()
 {
+    //MARK: GET TEMPERATURE last reading
 
+    fetch("/regerase")
+    //.then(response => response.json())
+    .then(data => {
+        document.getElementById("temperature-display").innerText = `Temperature: ${data.Temperature} °C`;  // Usar la clave correcta del JSON
+    })
+    .catch(error => console.error("Error:", error))
+    .then(data => console.log(`Response: ${data}`));
+}
 	
-	$.ajax({
+	/* $.ajax({
 		url: '/readreg.json',
 		dataType: 'json',
 		method: 'POST',
 		cache: false,
 		//headers: {'my-connect-ssid': selectedSSID, 'my-connect-pwd': pwd},
 		//data: {'timestamp': Date.now()}
-	});
+	}); */
 //	var xhr = new XMLHttpRequest();
 //	xhr.open("POST", "/toogle_led.json");
 //	xhr.setRequestHeader("Content-Type", "application/json");
 //	xhr.send(JSON.stringify({data: "mi información"}));
-}
+
 
 
 function erase_register()

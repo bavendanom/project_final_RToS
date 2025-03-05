@@ -724,7 +724,7 @@ esp_err_t set_time_handler(httpd_req_t *req) {
      char* days = NULL;
      int content_length;
  
-     ESP_LOGI(TAG, "/regchange.json requested");
+     ESP_LOGI(TAG, "/regchange requested");
  
      // Get the "Content-Length" header to determine the length of the request body
      header_len = httpd_req_get_hdr_value_len(req, "Content-Length");
@@ -1141,7 +1141,7 @@ httpd_uri_t OTA_status = {
 
 // register OTAstatus handler
 httpd_uri_t register_change = {
-    .uri = "/regchange.json",
+    .uri = "/regchange",
     .method = HTTP_POST,
     .handler = http_server_register_change_handler,
     .user_ctx = NULL
@@ -1150,7 +1150,7 @@ httpd_uri_t register_change = {
 
 // register erase handler
 httpd_uri_t register_erase = {
-    .uri = "/regerase.json",
+    .uri = "/regerase",
     .method = HTTP_POST,
     .handler = http_server_register_erase_handler,
     .user_ctx = NULL

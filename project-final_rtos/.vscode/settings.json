@@ -6,8 +6,8 @@
     "idf.openOcdConfigs": [
         "board/esp32-wrover-kit-3.3v.cfg"
     ],
-    "idf.toolsPathWin": "c:\\ESP_Programming\\.espressif",
-    "idf.portWin": "COM8",
+    "idf.toolsPathWin": "C:\\Users\\braya\\.espressif",
+    "idf.portWin": "COM12",
     "idf.flashType": "UART",
     "idf.customExtraVars": {
         "OPENOCD_SCRIPTS": "c:\\ESP_Programming\\.espressif\\tools\\openocd-esp32\\v0.12.0-esp32-20240318/openocd-esp32/share/openocd/scripts",
